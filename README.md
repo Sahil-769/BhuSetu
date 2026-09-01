@@ -533,7 +533,7 @@ The ultimate goal of the platform is:
 * ALI
 * KHALID
 * ANKITA
-* KHALID
+* SAQIB
 * FAHAD
 
 ---
