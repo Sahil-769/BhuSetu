@@ -2,13 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useLayout } from "./layoutContext";
-import { MdNotificationsActive } from "react-icons/md";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { RiArrowDropDownLine } from "react-icons/ri";
 import { IoMdSettings } from "react-icons/io";
 import { VscSignOut } from "react-icons/vsc";
 import { CgProfile } from "react-icons/cg";
 import Image from "next/image";
+import Link from "next/link";
 import ProfileImage from '../../../public/images/projectOfficer.jpg'
 import "./header.css";
 
@@ -35,7 +35,7 @@ const Header = ({ title }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
   return (
-    <header className="h-15 md:z-100">
+    <header className="h-15 md:z-[9999]">
       <div
         className={`fixed top-0 right-0  z-60 bg-[#fdfdff] shadow-sm
         flex justify-between items-center md:px-2 md:pr-5 md:py-4 h-16
@@ -63,16 +63,11 @@ const Header = ({ title }) => {
               {title}
             </span>
           </div>
-          
+
         </div>
 
         {/* RIGHT */}
         <div className="flex items-center gap-2">
-          {/* Notifications */}
-          {/* <div className="relative cursor-pointer">
-            <MdNotificationsActive className="text-2xl text-slate-400" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 animate-pulse bg-red-500 rounded-full border border-white" />
-          </div> */}
           <div ref={dropdownRef} className="relative">
             <div
               onMouseEnter={() => setIsDropdownOpen(true)}
@@ -114,12 +109,14 @@ const Header = ({ title }) => {
                   onClick={() => { console.log("Settings clicked"); /* persist open */ }}
                 >
                   <span className="flex items-center gap-2">
-                    <IoMdSettings /> Settings
+                    <IoMdSettings /> <Link href="/roles/project-officer/settings">Settings</Link>
                   </span>
                 </button>
                 <button
-                  className="menu-item logout-button"
-                  onClick={() => { console.log("Logout clicked"); /* persist open */ }}
+                  className="menu-item"
+                  onClick={() => {
+                    console.log("Logout clicked");
+                  }}
                 >
                   <span className="flex items-center gap-2"><VscSignOut /> Logout</span>
                 </button>

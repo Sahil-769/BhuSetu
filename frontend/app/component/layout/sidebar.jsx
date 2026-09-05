@@ -8,32 +8,22 @@ import { usePathname } from "next/navigation";
 import { FaArrowLeftLong, FaArrowRight } from "react-icons/fa6";
 import { useLayout } from "./layoutContext";
 import SidebarConfig from "../../config/sidebar.config";
-
 const Sidebar = () => {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed, showNavbar, setShowNavbar } =
     useLayout();
   const navRef = React.useRef(null);
 
-  const currentRole = pathname.startsWith("/project-officer")
+  const currentRole = pathname.startsWith("/roles/project-officer")
     ? "project-officer"
-    : pathname.startsWith("/role2")
+    : pathname.startsWith("/roles/role2")
       ? "role2"
       : "role3";
 
   const currentRoleData =
-    SidebarConfig.roles[currentRole] || SidebarConfig.roles.admin;
+    SidebarConfig.roles[currentRole];
   const tabs = currentRoleData.tabs;
   const logo = currentRoleData.profileImg;
-  const icon = currentRoleData.icon;
-  const profileImage = currentRoleData.profileImg;
-  const officerName = currentRoleData.officerName;
-  const state = currentRoleData.state;
-  const officerId = currentRoleData.officerId;
-  const district = currentRoleData.district;
-  const Logout = currentRoleData.Logout;
-  const displayName = currentRoleData.displayName || currentRoleData.role || currentRole;
-  const subtitle = currentRoleData.subtitle || "Institute Control Panel";
 
   // Close sidebar when clicking outside (mobile only)
   useEffect(() => {
@@ -49,11 +39,31 @@ const Sidebar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showNavbar, setShowNavbar]);
 
-  const normalizePath = (path) => path.replace(/\/+$|^\/$/, "") || "/";
+  const normalizePath = (path) => path?.replace(/\/+$/, "") || "/";
 
   const isActive = (url) => {
     const currentPath = normalizePath(pathname);
     const targetPath = normalizePath(url);
+
+    if (targetPath === "/roles/project-officer/") {
+      return currentPath === "/roles/project-officer";
+    }
+
+    if (targetPath === "/roles/project-officer/my-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/project-officer/create-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/project-officer/notification") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/project-officer/settings") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
 
     return currentPath === targetPath;
   };
@@ -66,14 +76,14 @@ const Sidebar = () => {
     <>
       {showNavbar && (
         <div
-          className="fixed inset-0 bg-black/50 z-[80] md:hidden"
+          className="fixed inset-0 bg-black/50 z-80 md:hidden"
           onClick={() => setShowNavbar(false)}
         />
       )}
 
       <nav
         ref={navRef}
-        className={`fixed left-0 top-0 z-[90] transition-transform duration-300 ease-in-out
+        className={`fixed left-0 top-0 z-90 transition-transform duration-300 ease-in-out
         ${showNavbar ? "translate-x-0" : "-translate-x-full"}
         md:translate-x-0
       `}
@@ -141,28 +151,6 @@ const Sidebar = () => {
                 ))}
               </ul>
             </nav>
-
-            {/* Logout Button */}
-            <div
-              className={`nav-btn nav-link mt-[50%] md:mt-auto  ${isActive(Logout.url) ? "active" : ""} ${
-                isCollapsed ? "justify-center" : ""
-              }`}
-              title={isCollapsed ? Logout.name : ""}
-            >
-              <Link
-                href={Logout.url}
-                className={`flex items-center gap-2.5 w-full text-[14px] ${
-                  isCollapsed
-                    ? "justify-center py-[0.7rem] pl-[0.3rem] pr-2"
-                    : "py-[0.6rem] pl-8 pr-3"
-                }`}
-              >
-                <span className="icon inline-block text-center w-5.5 transition-transform duration-200 ease-in-out scale-[1.15]">
-                  {Logout.icon}
-                </span>
-                {!isCollapsed && <span>{Logout.name}</span>}
-              </Link>
-            </div>
           </div>
         </aside>
       </nav>

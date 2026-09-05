@@ -18,3 +18,18 @@ body{
 	-webkit-font-smoothing:antialiased;
 	-moz-osx-font-smoothing:grayscale;
 }
+
+/* Design system: card */
+.card {
+	@apply bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4;
+}
+.card:hover { @apply -translate-y-1 shadow-lg }
+.card:active { @apply translate-y-0 shadow-md }
+
+/* Page container */
+.page-shell {
+	@apply min-h-screen bg-slate-50 pt-5 pb-8;
+}
+.page-container {
+	@apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}

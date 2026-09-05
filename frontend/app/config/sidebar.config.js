@@ -1,7 +1,7 @@
-const roles = ["projectOfficer"]
+const roles = ["project-officer"]
 const SidebarConfig = {
   roles: {
-    admin: {
+    'project-officer': {
       title: roles[0],
       profileImg:"/images/logo.png",
       officerName:"Ali Arzan Zaidi",
@@ -9,9 +9,10 @@ const SidebarConfig = {
       role: "Project Officer",
       tabs: [
         { name: "Dashboard", url: `/roles/${roles[0]}/` ,icon:"📊"},
-        { name: "Create Project", url: `/roles/${roles[0]}/create-project`,icon:"➕"},
         { name: "My Project", url:`/roles/${roles[0]}/my-project`,icon:"🗂️"},
-        { name: "GIS", url: `/roles/${roles[0]}/gis`,icon:"🌏"},
+        { name: "Create Project", url: `/roles/${roles[0]}/create-project`,icon:"➕"},
+        { name: "Notification", url:`/roles/${roles[0]}/notification`,icon:"🔔"},
+        { name: "Setting", url:`/roles/${roles[0]}/settings`,icon:"⚙️"},
       ],
     },
   },
