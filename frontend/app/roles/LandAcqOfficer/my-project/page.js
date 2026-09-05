@@ -6,7 +6,7 @@ import {
   Calendar,
   ArrowRight,
 } from "lucide-react";
-
+import {Header} from '../../../component/layout/index'
 const projects = [
   {
     name: "Delhi-Mumbai Expressway",
@@ -57,7 +57,8 @@ const projects = [
 
 export default function MyAssignedProjects() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-7xl mx-auto py-4 pb-5 px-3">
+      <Header title="My Project"/>
 
       {/* HEADER */}
 

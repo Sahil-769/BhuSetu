@@ -8,32 +8,22 @@ import { usePathname } from "next/navigation";
 import { FaArrowLeftLong, FaArrowRight } from "react-icons/fa6";
 import { useLayout } from "./layoutContext";
 import SidebarConfig from "../../config/sidebar.config";
-
 const Sidebar = () => {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed, showNavbar, setShowNavbar } =
     useLayout();
   const navRef = React.useRef(null);
 
-  const currentRole = pathname.startsWith("/project-officer")
-    ? "project-officer"
-    : pathname.startsWith("/role2")
-      ? "role2"
+  const currentRole = pathname.startsWith("/roles/projectOfficer")
+    ? "projectOfficer"
+    : pathname.startsWith("/roles/LandAcqOfficer")
+      ? "LandAcqOfficer"
       : "role3";
 
   const currentRoleData =
-    SidebarConfig.roles[currentRole] || SidebarConfig.roles.admin;
+    SidebarConfig.roles[currentRole];
   const tabs = currentRoleData.tabs;
   const logo = currentRoleData.profileImg;
-  const icon = currentRoleData.icon;
-  const profileImage = currentRoleData.profileImg;
-  const officerName = currentRoleData.officerName;
-  const state = currentRoleData.state;
-  const officerId = currentRoleData.officerId;
-  const district = currentRoleData.district;
-  const Logout = currentRoleData.Logout;
-  const displayName = currentRoleData.displayName || currentRoleData.role || currentRole;
-  const subtitle = currentRoleData.subtitle || "Institute Control Panel";
 
   // Close sidebar when clicking outside (mobile only)
   useEffect(() => {
@@ -49,11 +39,31 @@ const Sidebar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showNavbar, setShowNavbar]);
 
-  const normalizePath = (path) => path.replace(/\/+$|^\/$/, "") || "/";
+  const normalizePath = (path) => path?.replace(/\/+$/, "") || "/";
 
   const isActive = (url) => {
     const currentPath = normalizePath(pathname);
     const targetPath = normalizePath(url);
+
+    if (targetPath === "/roles/LandAcqOfficer/") {
+      return currentPath === "/roles/LandAcqOfficer/dashboard";
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/my-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/create-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/notification") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/settings") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
 
     return currentPath === targetPath;
   };
@@ -66,14 +76,14 @@ const Sidebar = () => {
     <>
       {showNavbar && (
         <div
-          className="fixed inset-0 bg-black/50 z-[80] md:hidden"
+          className="fixed inset-0 bg-black/50 z-80 md:hidden"
           onClick={() => setShowNavbar(false)}
         />
       )}
 
       <nav
         ref={navRef}
-        className={`fixed left-0 top-0 z-[90] transition-transform duration-300 ease-in-out
+        className={`fixed left-0 top-0 z-90 transition-transform duration-300 ease-in-out
         ${showNavbar ? "translate-x-0" : "-translate-x-full"}
         md:translate-x-0
       `}
@@ -85,9 +95,11 @@ const Sidebar = () => {
 >
           <div className="flex flex-col gap-4 h-full">
             {/* Profile Section */}
+            <a href="/">
             <div
               className={`profile_info flex items-center gap-3 ${isCollapsed ? "" : "px-3 py-3"} rounded-3xl bg-linear-to-br from-slate-800/80 to-slate-950/80 shadow-xl ring-1 ring-white/10 mb-3 ${isCollapsed ? "justify-center" : ""} transition-all duration-300`}
             >
+              
               <div className={`relative shrink-0 rounded-2xl ${isCollapsed ? "p-1 border border-white/10 bg-slate-900 " :" " } `}>
                 <Image
                   src={logo}
@@ -103,6 +115,7 @@ const Sidebar = () => {
                 </div>
                )}
             </div>
+               </a>
 
             {/* Toggle Button */}
             <button
@@ -128,7 +141,7 @@ const Sidebar = () => {
                   >
                     
                     <Link
-                      className={`w-full h-full flex gap-2.5 text-[14px] ${
+                      className={`w-full h-full flex gap-2.5 text-[14px] capitalize ${
                         isCollapsed
                           ? "justify-center py-[0.7rem] pl-[0.37rem] pr-2 text-lg"
                           : "py-[0.6rem] pl-8 pr-3"
@@ -141,28 +154,6 @@ const Sidebar = () => {
                 ))}
               </ul>
             </nav>
-
-            {/* Logout Button */}
-            <div
-              className={`nav-btn nav-link mt-[50%] md:mt-auto  ${isActive(Logout.url) ? "active" : ""} ${
-                isCollapsed ? "justify-center" : ""
-              }`}
-              title={isCollapsed ? Logout.name : ""}
-            >
-              <Link
-                href={Logout.url}
-                className={`flex items-center gap-2.5 w-full text-[14px] ${
-                  isCollapsed
-                    ? "justify-center py-[0.7rem] pl-[0.3rem] pr-2"
-                    : "py-[0.6rem] pl-8 pr-3"
-                }`}
-              >
-                <span className="icon inline-block text-center w-5.5 transition-transform duration-200 ease-in-out scale-[1.15]">
-                  {Logout.icon}
-                </span>
-                {!isCollapsed && <span>{Logout.name}</span>}
-              </Link>
-            </div>
           </div>
         </aside>
       </nav>

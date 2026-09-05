@@ -158,7 +158,7 @@ const projects = [
     ],
   },
 ];
-
+import {Header} from '../../../component/layout/index'
 export default function ParcelVerification() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [search, setSearch] = useState("");
@@ -192,7 +192,8 @@ export default function ParcelVerification() {
     ).length;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-5 max-w-7xl mx-auto py-2 pb-5 px-3">
+      <Header title="Parcel"/>
 
         {/* BACK BUTTON */}
 
@@ -201,7 +202,7 @@ export default function ParcelVerification() {
             setSelectedProject(null);
             setSearch("");
           }}
-          className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800"
+          className="flex items-center gap-2 text-sm font-semibold text-white hover:text-white bg-blue-600 hover:bg-blue-700 p-2 rounded-lg"
         >
           <ArrowLeft size={18} />
           Back to Projects
@@ -459,7 +460,9 @@ export default function ParcelVerification() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-7xl mx-auto py-4 pb-5 px-3">
+      <Header title="Parcel"/>
+
 
       {/* HEADER */}
 

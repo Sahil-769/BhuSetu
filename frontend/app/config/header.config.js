@@ -1,27 +1,22 @@
-const roles = ["projectOfficer"]
 const HeaderConfig = {
   roles: {
-    admin: {
-      title: roles[0],
-      // profileImg:"/images/projectOfficer.jpg",
-      profileImg:"/images/logo.png",
-      officerName:"Ali Arzan Zaidi",
-      Logout: { name: "LogOut", url: `${roles[0]}/logout`, icon: "➜]" },
+    projectOfficer: {
+      title: "projectOfficer",
+      profileImg: "/images/projectOfficer.jpg",
+      officerName: "Ali Arzan Zaidi",
+      logout: { name: "LogOut", url: "/roles/projectOfficer/logout", icon: "➜" },
       role: "Project Officer",
-      // state: "Uttar Pardesh",
-      // officerId :"PS1230",
-      // district:"Pratapgarh",
+      state: "Delhi",
+      district: "Ujwa",
     },
-        admin: {
-      title: roles[1],
-      // profileImg:"/images/projectOfficer.jpg",
-      profileImg:"/images/logo.png",
-      officerName:"Ali Arzan Zaidi",
-      Logout: { name: "LogOut", url: `${roles[0]}/logout`, icon: "➜]" },
+    LandAcqOfficer: {
+      title: "LandAcqOfficer",
+      profileImg: "/images/LAOfficer.jpg",
+      officerName: "Khalid Umar",
+      logout: { name: "LogOut", url: "/roles/LandAcqOfficer/logout", icon: "➜" },
       role: "Land Acquisition Officer",
-      // state: "Uttar Pardesh",
-      // officerId :"PS1230",
-      // district:"Pratapgarh",
+      state: "Delhi",
+      district: "Ujwa",
     },
   },
 };

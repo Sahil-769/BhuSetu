@@ -75,11 +75,14 @@ const activities = [
     color: "bg-orange-500",
   },
 ];
+import {Header} from '../../../component/layout/index'
 
 
 export default function Dashboard() {
   return (
-    <div className="space-y-5">
+    <>
+    <Header title="Dashboard"/>
+    <div className="space-y-5 max-w-7xl mx-auto py-4 pb-5 px-3">
 
       {/* ================= TOP STAT CARDS ================= */}
 
@@ -567,6 +570,7 @@ export default function Dashboard() {
       </div>
 
     </div>
+    </>
   );
 }
 
