@@ -14,8 +14,8 @@ const Sidebar = () => {
     useLayout();
   const navRef = React.useRef(null);
 
-  const currentRole = pathname.startsWith("/roles/projectOfficer")
-    ? "projectOfficer"
+  const currentRole = pathname.startsWith("/roles/project-officer")
+    ? "project-officer"
     : pathname.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
       : "role3";
@@ -62,6 +62,9 @@ const Sidebar = () => {
     }
 
     if (targetPath === "/roles/LandAcqOfficer/settings") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
     if (targetPath === "/roles/project-officer/") {
       return currentPath === "/roles/project-officer";
     }
@@ -176,6 +179,6 @@ const Sidebar = () => {
       </nav>
     </>
   );
-};
+}
 
 export default Sidebar;

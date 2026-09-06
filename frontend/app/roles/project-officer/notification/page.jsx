@@ -442,7 +442,7 @@ export default function Page() {
               return (
                 <article
                   key={notification.id}
-                  className={`rounded-xl border border-l-4 p-2.5 shadow-sm transition sm:p-3 ${
+                  className={`rounded-xl  p-2.5 shadow-sm hover:shadow-lg hover:-translate-y-1 cursor-pointer transition sm:p-3 ${
                     notification.isRead ? "border-slate-200 bg-white" : "border-slate-300 bg-slate-50"
                   } ${accentClass}`}
                 >

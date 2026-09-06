@@ -10,7 +10,6 @@ import { VscSignOut } from "react-icons/vsc";
 import { CgProfile } from "react-icons/cg";
 import Image from "next/image";
 import Link from "next/link";
-import ProfileImage from '../../../public/images/projectOfficer.jpg'
 import "./header.css";
 import HeaderConfig from "../../config/header.config";
 
@@ -20,13 +19,13 @@ const Header = ({ title }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
-  const currentRole = pathname?.startsWith("/roles/projectOfficer")
-    ? "projectOfficer"
+  const currentRole = pathname?.startsWith("/roles/project-officer")
+    ? "project-officer"
     : pathname?.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
       : "LandAcqOfficer";
 
-  const currentUser = HeaderConfig.roles[currentRole] || HeaderConfig.roles.LandAcqOfficer;
+  const currentUser = HeaderConfig.roles[currentRole];
 
   const toggleDropdown = () => {
     setIsDropdownOpen((prev) => {

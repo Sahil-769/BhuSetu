@@ -1,15 +1,15 @@
 const HeaderConfig = {
   roles: {
-    projectOfficer: {
+    'project-officer': {
       title: "projectOfficer",
       profileImg: "/images/projectOfficer.jpg",
       officerName: "Ali Arzan Zaidi",
-      logout: { name: "LogOut", url: "/roles/projectOfficer/logout", icon: "➜" },
+      logout: { name: "LogOut", url: "/roles/project-officer/logout", icon: "➜" },
       role: "Project Officer",
       state: "Delhi",
       district: "Ujwa",
     },
-    LandAcqOfficer: {
+    'LandAcqOfficer': {
       title: "LandAcqOfficer",
       profileImg: "/images/LAOfficer.jpg",
       officerName: "Khalid Umar",

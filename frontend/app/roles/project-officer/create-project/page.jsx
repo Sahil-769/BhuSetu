@@ -279,9 +279,9 @@ export default function CreateProjectPage() {
       </div>
 
       {/* Stepper */}
-      <div className=" bg-white">
-        <div className="mx-auto border border-white shadow-lg rounded-full max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-4">
-          <div className="flex min-w-175 items-center py-2">
+      <div className=" bg-white  px-8">
+        <div className="mx-auto border border-white shadow-lg rounded-full overflow-x-auto px-4 sm:px-6 lg:px-6 py-1.5">
+          <div className="flex items-center py-2">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.id;

@@ -111,7 +111,7 @@ const projectActivities = [
     title: "Project Created",
     description: "Baseline project record created with project details and village information.",
     timestamp: "2026-09-02T09:30:00",
-    actor: { name: "Mohd Saqib", role: "Project Officer", phone: null },
+    actor: { name: "Ali Arzan Zaidi", role: "Project Officer", phone: null },
     status: "completed",
     remark: "Initial project intake completed and assigned to the field team.",
   },
@@ -122,7 +122,7 @@ const projectActivities = [
     title: "Project Submitted",
     description: "Project was submitted for LAO verification and processing.",
     timestamp: "2026-09-05T10:42:00",
-    actor: { name: "Mohd Saqib", role: "Project Officer", phone: null },
+    actor: { name: "Ali Arzan Zaidi", role: "Project Officer", phone: null },
     status: "completed",
     remark: "Project details and initial GIS boundary submitted for review.",
   },
@@ -188,7 +188,7 @@ const projectActivities = [
     title: "Acquisition Data Submitted",
     description: "Acquisition data and parcel details were submitted for review and AI processing.",
     timestamp: "2026-09-05T13:10:00",
-    actor: { name: "Mohd Saqib", role: "Project Officer", phone: null },
+    actor: { name: "Ali Arzan Zaidi", role: "Project Officer", phone: null },
     status: "completed",
     remark: "Updated parcel and compensation-related uploads attached to the project record.",
   },
@@ -246,7 +246,7 @@ const projectActivities = [
     title: "Data Updated",
     description: "Project data was refreshed after additional field verification and ownership updates.",
     timestamp: "2026-09-06T10:40:00",
-    actor: { name: "Mohd Saqib", role: "Project Officer", phone: null },
+    actor: { name: "Ali Arzan Zaidi", role: "Project Officer", phone: null },
     status: "completed",
     remark: "Ownership records updated and supporting documentation attached.",
   },
@@ -296,9 +296,35 @@ const projectActivities = [
     title: "Project Completed",
     description: "Project reached completion after acquisition and verification milestones were closed.",
     timestamp: "2026-09-10T17:45:00",
-    actor: { name: "Mohd Saqib", role: "Project Officer", phone: null },
+    actor: { name: "Ali Arzan Zaidi", role: "Project Officer", phone: null },
     status: "completed",
     remark: "Closure documentation prepared and final acceptance recorded.",
+  },
+];
+const assignedOfficer = [
+  {
+    id: 1,
+    name: "Ali Arzan Zaidi",
+    role: "Project Officer",
+    date: "2026-09-10T17:45:00",
+    status: "assigned",
+    remark: "Created project and initiated intake",
+  },
+  {
+    id: 2,
+    name: "Rajesh Kumar",
+    role: "Land Acquisition Officer",
+    date: "2026-09-12T19:45:00",
+    status: "assigned",
+    remark: "Assigned for field verification",
+  },
+  {
+    id: 3,
+    name: "Mr. Ashish",
+    role: "Nodal Officer",
+    date: "2026-09-16T12:45:00",
+    status: "pending",
+    remark: "Pending acceptance",
   },
 ];
 
@@ -313,11 +339,10 @@ function ActivityFilters({ activeFilter, onChange, counts }) {
             key={filter.key}
             type="button"
             onClick={() => onChange(filter.key)}
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-              isActive
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${isActive
                 ? "border-slate-900 bg-slate-900 text-white"
                 : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-            }`}
+              }`}
             aria-pressed={isActive}
           >
             <span>{filter.label}</span>
@@ -646,7 +671,7 @@ export default function ProjectDetailsPage() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 lg:grid-cols-3">
+        <section className="mt-6 grid gap-4  lg:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
               <CalendarRange className="h-4 w-4" />
@@ -670,32 +695,78 @@ export default function ProjectDetailsPage() {
               <FileText className="h-4 w-4" />
               Documents
             </p>
-            <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">Project brief.pdf</li>
-              <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">Land schedule.xlsx</li>
-              <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">LAO verification note.pdf</li>
+            <ul className="mt-4 space-y-2 text-sm text-slate-600  ">
+              <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:text-slate-900">Project brief.pdf</li>
+              <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:text-slate-900">Land schedule.xlsx</li>
+              <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:text-slate-900">LAO verification note.pdf</li>
             </ul>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
               <Activity className="h-4 w-4" />
-              Activity
+              Assigned officers
             </p>
-            <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
-                Project created and assigned to field team.
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
-                Site reconnaissance completed and parcel review initiated.
-              </li>
-              <li className="flex items-start gap-2">
-                <TriangleAlert className="mt-0.5 h-4 w-4 text-amber-600" />
-                Acquisition risk flagged for delay due to encumbrance review.
-              </li>
-            </ul>
+
+            {/* Officer timeline with vertical progress (derived from `assingedOfficer`) */}
+            {(() => {
+              const officerActivities = (typeof assignedOfficer !== "undefined" ? assignedOfficer : []).map((a) => ({
+                id: a.id,
+                actor: { name: a.name, role: a.role },
+                timestamp: a.date,
+                status: a.status,
+                remark: a.remark || "",
+              }));
+
+              return (
+                <div className="mt-3">
+                  {officerActivities.length === 0 ? (
+                    <p className="text-sm text-slate-600">No officer assigned yet.</p>
+                  ) : (
+                    <ul className="divide-y divide-slate-100">
+                      {officerActivities.map((act, idx) => {
+                        const isDone = ["assigned", "completed", "active"].includes(act.status);
+                        const isLast = idx === officerActivities.length - 1;
+
+                        return (
+                          <li key={act.id} className="flex items-start gap-3 py-2">
+                            <div className="flex flex-col items-center pt-1">
+                              <div className={`h-2.5 w-2.5 rounded-full ${isDone ? "bg-emerald-600" : "bg-slate-300"}`} />
+                              {!isLast && <div className="h-6 w-px bg-slate-100 mt-1" />}
+                            </div>
+
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="text-sm text-slate-800 font-bold truncate">{act.actor?.name || "Officer"} <span className="text-xs text-slate-700">• {act.actor?.role}</span></p>
+                                  <p className="text-xs text-slate-500">{formatDateTime(act.timestamp)}</p>
+                                  {/* {act.remark ? <p className="mt-1 text-xs text-slate-600">{act.remark}</p> : null} */}
+                                </div>
+
+                                <div className="shrink-0 text-xs">
+                                  {act.status === "completed" && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700 text-[11px]">Done</span>
+                                  )}
+                                  {act.status === "pending" && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 text-[11px]">Pending</span>
+                                  )}
+                                  {act.status === "assigned" && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-sky-700 text-[11px]">Assigned</span>
+                                  )}
+                                  {act.status === "warning" && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 text-[11px]">Attention</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </section>
 

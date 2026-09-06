@@ -1,4 +1,4 @@
-const roles = ["project-officer"]
+const roles = ["project-officer","LandAcqOfficer"]
 const SidebarConfig = {
   roles: {
     'project-officer': {
@@ -9,12 +9,13 @@ const SidebarConfig = {
       role: "Project Officer",
       tabs: [
         { name: "Dashboard", url: `/roles/${roles[0]}/`, icon: "📊" },
-        { name: "Create Project", url: `/roles/${roles[0]}/create-project`, icon: "➕" },
         { name: "My Project", url: `/roles/${roles[0]}/my-project`, icon: "🗂️" },
-        { name: "GIS", url: `/roles/${roles[0]}/gis`, icon: "🌏" },
+        { name: "Create Project", url: `/roles/${roles[0]}/create-project`, icon: "➕" },
+        { name: "Notificatiion", url: `/roles/${roles[0]}/notification`, icon: "🔔" },
+        { name: "Settings", url: `/roles/${roles[0]}/settings`, icon: "⚙️" },
       ],
     },
-    LandAcqOfficer: {
+    'LandAcqOfficer': {
       title: roles[1],
       profileImg: "/images/logo.png",
       officerName: "Khalid Umar",

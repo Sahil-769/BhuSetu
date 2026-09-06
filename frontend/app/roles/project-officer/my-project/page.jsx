@@ -85,11 +85,11 @@ function SummaryCard({ label, value, icon: Icon, accent, onClick }) {
 function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block text-sm font-medium text-slate-700">
-      <span className="mb-2 block">{label}</span>
+      <span className="mb-1 block text-xs">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-200"
+        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-200"
         aria-label={label}
       >
         {options.map((option) => (
@@ -336,7 +336,7 @@ export default function Page() {
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <Header title="My Projects" />
 
-      <main className="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-8xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">My Projects</h1>
@@ -344,20 +344,20 @@ export default function Page() {
           </div>
         </div>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {summaryCards.map(({ label, value, icon: Icon, accent, action }) => (
             <SummaryCard key={label} label={label} value={value} icon={Icon} accent={accent} onClick={action} />
           ))}
         </section>
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+          <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700" htmlFor="project-search">
+              <label className="block text-normal font-medium text-slate-700" htmlFor="project-search">
                 Search projects
               </label>
               <div className="relative mt-2">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                 <input
                   id="project-search"
                   type="search"
@@ -366,34 +366,42 @@ export default function Page() {
                     setSearchQuery(event.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search by project name, Project ID, district..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-200"
+                  placeholder="Search by name, ID, district..."
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-200"
                   aria-label="Search projects by name, Project ID, district, village, or project type"
                 />
               </div>
             </div>
 
-            <div className="flex w-full max-w-xs items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 xl:mt-0">
+            <div className="flex w-full max-w-xs items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-700 xl:mt-0">
               <SlidersHorizontal className="h-4 w-4 text-slate-500" />
-              <span className="font-medium">{filteredProjects.length} matching</span>
+              <span className="font-medium text-sm">{filteredProjects.length} matching</span>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            <FilterSelect label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} options={statusOptions} />
-            <FilterSelect label="Project Type" value={typeFilter} onChange={(value) => { setTypeFilter(value); setCurrentPage(1); }} options={projectTypeOptions} />
-            <FilterSelect label="Risk" value={riskFilter} onChange={(value) => { setRiskFilter(value); setCurrentPage(1); }} options={riskOptions} />
-            <FilterSelect label="District" value={districtFilter} onChange={(value) => { setDistrictFilter(value); setCurrentPage(1); }} options={["All", ...districtOptions]} />
-            <div className="flex items-end">
+          <div className="mt-3 flex flex-wrap gap-2 items-end">
+            <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
+              <FilterSelect label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} options={statusOptions} />
+            </div>
+            <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
+              <FilterSelect label="Project Type" value={typeFilter} onChange={(value) => { setTypeFilter(value); setCurrentPage(1); }} options={projectTypeOptions} />
+            </div>
+            <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
+              <FilterSelect label="Risk" value={riskFilter} onChange={(value) => { setRiskFilter(value); setCurrentPage(1); }} options={riskOptions} />
+            </div>
+            <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
+              <FilterSelect label="District" value={districtFilter} onChange={(value) => { setDistrictFilter(value); setCurrentPage(1); }} options={["All", ...districtOptions]} />
+            </div>
+            <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
               <label className="block w-full text-sm font-medium text-slate-700">
-                <span className="mb-2 block">Sort by</span>
+                <span className="mb-1 block text-xs">Sort by</span>
                 <select
                   value={sortBy}
                   onChange={(event) => {
                     setSortBy(event.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-200"
                   aria-label="Sort projects"
                 >
                   {sortOptions.map((option) => (
@@ -406,14 +414,14 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col items-start justify-between gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center">
-            <p className="text-sm text-slate-600">
+          <div className="mt-4 flex flex-col items-start justify-between gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center">
+            <p className="text-xs text-slate-600">
               Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{PROJECTS.length}</span> projects
             </p>
             <button
               type="button"
               onClick={clearFilters}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
             >
               <XCircle className="h-4 w-4" />
               Clear Filters
