@@ -62,6 +62,23 @@ const Sidebar = () => {
     }
 
     if (targetPath === "/roles/LandAcqOfficer/settings") {
+    if (targetPath === "/roles/project-officer/") {
+      return currentPath === "/roles/project-officer";
+    }
+
+    if (targetPath === "/roles/project-officer/my-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/project-officer/create-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/project-officer/notification") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/project-officer/settings") {
       return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
     }
 

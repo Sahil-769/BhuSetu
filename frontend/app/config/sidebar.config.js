@@ -1,8 +1,7 @@
-const roles = ["projectOfficer", "LandAcqOfficer"];
-
+const roles = ["project-officer"]
 const SidebarConfig = {
   roles: {
-    projectOfficer: {
+    'project-officer': {
       title: roles[0],
       profileImg: "/images/logo.png",
       officerName: "Ali Arzan Zaidi",
