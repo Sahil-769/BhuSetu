@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useLayout } from "./layoutContext";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { RiArrowDropDownLine } from "react-icons/ri";
@@ -11,19 +12,32 @@ import Image from "next/image";
 import Link from "next/link";
 import ProfileImage from '../../../public/images/projectOfficer.jpg'
 import "./header.css";
+import HeaderConfig from "../../config/header.config";
 
 const Header = ({ title }) => {
+  const pathname = usePathname();
   const { isCollapsed, showNavbar, setShowNavbar } = useLayout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+
+  const currentRole = pathname?.startsWith("/roles/projectOfficer")
+    ? "projectOfficer"
+    : pathname?.startsWith("/roles/LandAcqOfficer")
+      ? "LandAcqOfficer"
+      : "LandAcqOfficer";
+
+  const currentUser = HeaderConfig.roles[currentRole] || HeaderConfig.roles.LandAcqOfficer;
+
   const toggleDropdown = () => {
-    setIsDropdownOpen(prev => {
+    setIsDropdownOpen((prev) => {
       const next = !prev;
       setIsPinned(next ? true : false);
       return next;
     });
-  }
+  };
+
   const dropdownRef = useRef(null);
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -31,18 +45,19 @@ const Header = ({ title }) => {
         setIsPinned(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
+
   return (
     <header className="h-15 md:z-[9999]">
       <div
-        className={`fixed top-0 right-0  z-60 bg-[#fdfdff] shadow-sm
+        className={`fixed top-0 right-0 z-60 bg-[#fdfdff] shadow-sm
         flex justify-between items-center md:px-2 md:pr-5 md:py-4 h-16
         transition-all duration-300 left-0
         ${isCollapsed ? "md:left-20" : "left-0 md:left-64"}`}
       >
-        {/* LEFT */}
         <div className="flex gap-2 items-center">
           <button
             onClick={() => setShowNavbar(true)}
@@ -63,10 +78,8 @@ const Header = ({ title }) => {
               {title}
             </span>
           </div>
-
         </div>
 
-        {/* RIGHT */}
         <div className="flex items-center gap-2">
           <div ref={dropdownRef} className="relative">
             <div
@@ -76,15 +89,15 @@ const Header = ({ title }) => {
             >
               <div className="flex flex-row gap-2 justify-center items-center">
                 <Image
-                  src={ProfileImage}
+                  src={currentUser.profileImg}
                   width={45}
                   height={45}
-                  alt="Profile"
+                  alt={`${currentUser.officerName} profile`}
                   className="rounded-full"
                 />
                 <p className="flex flex-col text-xs text-slate-600 overflow-hidden whitespace-nowrap text-ellipsis">
-                  <span className="font-bold text-sm">Ali Arzan Zaidi</span>
-                  <span>Project Officer</span>
+                  <span className="font-bold text-sm">{currentUser.officerName}</span>
+                  <span>{currentUser.role}</span>
                 </p>
               </div>
               <RiArrowDropDownLine className={`text-2xl text-slate-500 ${isDropdownOpen ? "rotate-180" : ""}`} />
@@ -93,12 +106,16 @@ const Header = ({ title }) => {
             {isDropdownOpen && (
               <div
                 onMouseEnter={() => setIsDropdownOpen(true)}
-                onMouseLeave={() => { if (!isPinned) setIsDropdownOpen(false); }}
+                onMouseLeave={() => {
+                  if (!isPinned) setIsDropdownOpen(false);
+                }}
                 className="absolute right-0 mt-2 w-45 bg-white rounded-md shadow-lg z-50 transform origin-top-right animate-dropdown will-change-transform p-2 flex flex-col gap-2"
               >
                 <button
                   className="menu-item"
-                  onClick={() => { console.log("My Profile clicked"); /* persist open */ }}
+                  onClick={() => {
+                    console.log("My Profile clicked");
+                  }}
                 >
                   <span className="flex items-center gap-2">
                     <CgProfile /> My Profile
@@ -106,14 +123,16 @@ const Header = ({ title }) => {
                 </button>
                 <button
                   className="menu-item"
-                  onClick={() => { console.log("Settings clicked"); /* persist open */ }}
+                  onClick={() => {
+                    console.log("Settings clicked");
+                  }}
                 >
                   <span className="flex items-center gap-2">
                     <IoMdSettings /> <Link href="/roles/project-officer/settings">Settings</Link>
                   </span>
                 </button>
                 <button
-                  className="menu-item"
+                  className="menu-item logout-button"
                   onClick={() => {
                     console.log("Logout clicked");
                   }}
@@ -128,14 +147,13 @@ const Header = ({ title }) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="font-bold text-slate-800">Ujwa,</span>
-            <span className="font-medium text-slate-500">Delhi</span>
+            <span className="font-bold text-slate-800">{currentUser.district},</span>
+            <span className="font-medium text-slate-500">{currentUser.state}</span>
           </div>
-
         </div>
       </div>
     </header>
   );
-}
+};
 
 export default Header;

@@ -14,10 +14,10 @@ const Sidebar = () => {
     useLayout();
   const navRef = React.useRef(null);
 
-  const currentRole = pathname.startsWith("/roles/project-officer")
-    ? "project-officer"
-    : pathname.startsWith("/roles/role2")
-      ? "role2"
+  const currentRole = pathname.startsWith("/roles/projectOfficer")
+    ? "projectOfficer"
+    : pathname.startsWith("/roles/LandAcqOfficer")
+      ? "LandAcqOfficer"
       : "role3";
 
   const currentRoleData =
@@ -45,6 +45,23 @@ const Sidebar = () => {
     const currentPath = normalizePath(pathname);
     const targetPath = normalizePath(url);
 
+    if (targetPath === "/roles/LandAcqOfficer/") {
+      return currentPath === "/roles/LandAcqOfficer/dashboard";
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/my-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/create-project") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/notification") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
+    if (targetPath === "/roles/LandAcqOfficer/settings") {
     if (targetPath === "/roles/project-officer/") {
       return currentPath === "/roles/project-officer";
     }
@@ -95,9 +112,11 @@ const Sidebar = () => {
 >
           <div className="flex flex-col gap-4 h-full">
             {/* Profile Section */}
+            <a href="/">
             <div
               className={`profile_info flex items-center gap-3 ${isCollapsed ? "" : "px-3 py-3"} rounded-3xl bg-linear-to-br from-slate-800/80 to-slate-950/80 shadow-xl ring-1 ring-white/10 mb-3 ${isCollapsed ? "justify-center" : ""} transition-all duration-300`}
             >
+              
               <div className={`relative shrink-0 rounded-2xl ${isCollapsed ? "p-1 border border-white/10 bg-slate-900 " :" " } `}>
                 <Image
                   src={logo}
@@ -113,6 +132,7 @@ const Sidebar = () => {
                 </div>
                )}
             </div>
+               </a>
 
             {/* Toggle Button */}
             <button
@@ -138,7 +158,7 @@ const Sidebar = () => {
                   >
                     
                     <Link
-                      className={`w-full h-full flex gap-2.5 text-[14px] ${
+                      className={`w-full h-full flex gap-2.5 text-[14px] capitalize ${
                         isCollapsed
                           ? "justify-center py-[0.7rem] pl-[0.37rem] pr-2 text-lg"
                           : "py-[0.6rem] pl-8 pr-3"
