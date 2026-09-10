@@ -1,11 +1,6 @@
-import React from 'react'
-const page=(()=>{
-    return (
-        <>
-        <div>
-            Hello I am Nodal Officer
-        </div>
-        </>
-    )
-})
-export default page;
+"use client";
+import React, { useState } from "react";
+import HomesPage from "./dashboard/page";
+export default function Page() {
+  return <HomesPage />;
+}

@@ -15,7 +15,7 @@ import HeaderConfig from "../../config/header.config";
 
 const Header = ({ title }) => {
   const pathname = usePathname();
-  const { isCollapsed, showNavbar, setShowNavbar } = useLayout();
+  const { isCollapsed, setShowNavbar } = useLayout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
@@ -23,7 +23,7 @@ const Header = ({ title }) => {
     ? "project-officer"
     : pathname?.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
-      : "LandAcqOfficer";
+      : "nodal-officer";
 
   const currentUser = HeaderConfig.roles[currentRole];
 
