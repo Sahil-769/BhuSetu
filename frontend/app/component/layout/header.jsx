@@ -9,6 +9,8 @@ import { IoMdSettings } from "react-icons/io";
 import { VscSignOut } from "react-icons/vsc";
 import { CgProfile } from "react-icons/cg";
 import Image from "next/image";
+import Link from "next/link";
+import ProfileImage from '../../../public/images/projectOfficer.jpg'
 import "./header.css";
 import HeaderConfig from "../../config/header.config";
 
@@ -49,7 +51,7 @@ const Header = ({ title }) => {
   }, [dropdownRef]);
 
   return (
-    <header className="h-15 md:z-100">
+    <header className="h-15 md:z-[9999]">
       <div
         className={`fixed top-0 right-0 z-60 bg-[#fdfdff] shadow-sm
         flex justify-between items-center md:px-2 md:pr-5 md:py-4 h-16
@@ -126,7 +128,7 @@ const Header = ({ title }) => {
                   }}
                 >
                   <span className="flex items-center gap-2">
-                    <IoMdSettings /> Settings
+                    <IoMdSettings /> <Link href="/roles/project-officer/settings">Settings</Link>
                   </span>
                 </button>
                 <button
