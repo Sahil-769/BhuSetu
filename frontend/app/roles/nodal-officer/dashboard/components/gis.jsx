@@ -9,15 +9,15 @@ import {
   PROJECTS,
   createClusterIcon,
   createMarkerIcon,
-  getAcquisitionProgress,
+  
   getClusteredProjects,
-  getInterventionStatus,
+  
   getProjectGeometry,
-  getRiskTrend,
+  
   hasValidProjectCoordinates,
   isLinearProject,
   riskColors,
-  riskTone,
+  
 } from "../../risk-map/page";
 
 function MapBoundsController({ projects, mapRef }) {
