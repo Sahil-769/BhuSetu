@@ -1,4 +1,4 @@
-const roles = ["project-officer","LandAcqOfficer","nodal-officer"]
+const roles = ["project-officer","LandAcqOfficer","nodal-officer","admin"]
 const SidebarConfig = {
   roles: {
     'project-officer': {
@@ -45,6 +45,23 @@ const SidebarConfig = {
         { name: "Notifications", url: `/roles/${roles[2]}/notification`, icon: "🔔" },
       ],
     },
+    'admin': {
+      title: roles[3],
+      profileImg: "/images/logo.png",
+      logout: { name: "LogOut", url: `/roles/${roles[3]}/logout`, icon: "➜" },
+      role: "Nodal Officer",
+      tabs: [
+        { name: "dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
+        { name: "users", url: `/roles/${roles[3]}/users`, icon: "👤" },
+        { name: "Jurisdiction", url: `/roles/${roles[3]}/Jurisdiction`, icon: "⚖️" },
+        { name: "assignment", url: `/roles/${roles[3]}/assignment`, icon: "📌" },
+        { name: "gis overview", url: `/roles/${roles[3]}/gis`, icon: "🌍" },
+        { name: "Notifications", url: `/roles/${roles[3]}/notification`, icon: "🔔" },
+        { name: "audit logs", url: `/roles/${roles[3]}/audit-log`, icon: "🔐" },
+        { name: "configuration", url: `/roles/${roles[3]}/configuration`, icon: "🛠️" },
+      ],
+    },
+    
   },
 };
 

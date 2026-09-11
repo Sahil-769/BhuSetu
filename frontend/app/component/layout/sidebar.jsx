@@ -11,14 +11,16 @@ import SidebarConfig from "../../config/sidebar.config";
 const Sidebar = () => {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed, showNavbar, setShowNavbar } =
-    useLayout();
+    useLayout(); 
   const navRef = React.useRef(null);
 
-  const currentRole = pathname.startsWith("/roles/project-officer")
+  const currentRole = pathname?.startsWith("/roles/project-officer")
     ? "project-officer"
-    : pathname.startsWith("/roles/LandAcqOfficer")
+    : pathname?.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
-      : "nodal-officer";
+      : pathname?.startsWith("/roles/admin")
+        ? "admin"
+        : "nodal-officer";
 
   const currentRoleData =
     SidebarConfig.roles[currentRole];

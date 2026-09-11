@@ -33,8 +33,6 @@ const HeaderConfig = {
       officerName: "System Administrator",
       logout: { name: "LogOut", url: "/roles/admin/logout", icon: "➜" },
       role: "System Admin",
-      state: "Uttar Pradesh",
-      district: "State Office",
     },
   },
 };
