@@ -1,52 +1,39 @@
-"use client";
+﻿"use client";
+
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Circle, MapContainer, Marker, Polygon, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { ArrowRight, ExternalLink, Layers3, LocateFixed, MapPinned, ZoomIn, ZoomOut } from "lucide-react";
 
-import {
-  PROJECTS,
-  createClusterIcon,
-  createMarkerIcon,
-  
-  getClusteredProjects,
-  
-  getProjectGeometry,
-  
-  hasValidProjectCoordinates,
-  isLinearProject,
-  riskColors,
-  
-} from "../../risk-map/page";
+const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
+const Circle = dynamic(() => import("react-leaflet").then((mod) => mod.Circle), { ssr: false });
+const Polygon = dynamic(() => import("react-leaflet").then((mod) => mod.Polygon), { ssr: false });
+const Polyline = dynamic(() => import("react-leaflet").then((mod) => mod.Polyline), { ssr: false });
+const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
 
-function MapBoundsController({ projects, mapRef }) {
-  const map = useMap();
+const fallbackRiskColors = {
+  Low: "#22c55e",
+  Medium: "#f59e0b",
+  High: "#f97316",
+  Critical: "#ef4444",
+  "N/A": "#94a3b8",
+};
 
-  useEffect(() => {
-    mapRef.current = map;
-
-    if (!projects.length) return;
-
-    const points = projects.flatMap((project) => {
-      const geometry = getProjectGeometry(project);
-      if (!geometry) return [];
-      if (geometry.route) return [...geometry.route, geometry.point];
-      if (geometry.polygon) return [...geometry.polygon, geometry.point];
-      return [geometry.point];
-    });
-
-    if (points.length) {
-      map.fitBounds(points, { padding: [28, 28], maxZoom: 6 });
-    }
-  }, [map, mapRef, projects]);
-
-  return null;
-}
+const fallbackRiskTone = {
+  Low: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  Medium: "border-amber-200 bg-amber-50 text-amber-700",
+  High: "border-orange-200 bg-orange-50 text-orange-700",
+  Critical: "border-red-200 bg-red-50 text-red-700",
+  "N/A": "border-slate-200 bg-slate-100 text-slate-600",
+};
 
 const gis = () => {
   const mapRef = useRef(null);
-  const [selectedProjectId, setSelectedProjectId] = useState(PROJECTS[0]?.id ?? null);
+  const [gismap, setGisMap] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [visibleLayers, setVisibleLayers] = useState({
     markers: true,
     routes: true,
@@ -54,12 +41,46 @@ const gis = () => {
     riskZones: true,
   });
 
+  useEffect(() => {
+    let active = true;
+
+    import("../../risk-map/page")
+      .then((mod) => {
+        if (active) {
+          setGisMap(mod);
+          setSelectedProjectId(mod.PROJECTS?.[0]?.id ?? null);
+        }
+      })
+      .catch(() => {
+        if (active) setGisMap(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const PROJECTS = gismap?.PROJECTS ?? [];
+  const riskColors = gismap?.riskColors ?? fallbackRiskColors;
+  const riskTone = gismap?.riskTone ?? fallbackRiskTone;
+  const createMarkerIcon = gismap?.createMarkerIcon ?? (() => null);
+  const createClusterIcon = gismap?.createClusterIcon ?? (() => null);
+  const getAcquisitionProgress = gismap?.getAcquisitionProgress ?? (() => 0);
+  const getClusteredProjects =
+    gismap?.getClusteredProjects ??
+    ((items) => items.map((project) => ({ center: gismap?.getProjectGeometry?.(project)?.point ?? [0, 0], projects: [project] })));
+  const getInterventionStatus = gismap?.getInterventionStatus ?? (() => "No");
+  const getProjectGeometry = gismap?.getProjectGeometry ?? (() => null);
+  const getRiskTrend = gismap?.getRiskTrend ?? (() => "Stable");
+  const hasValidProjectCoordinates = gismap?.hasValidProjectCoordinates ?? (() => true);
+  const isLinearProject = gismap?.isLinearProject ?? (() => false);
+
   const scopedProjects = useMemo(
     () => PROJECTS.filter((project) => hasValidProjectCoordinates(project)),
-    []
+    [PROJECTS, hasValidProjectCoordinates]
   );
 
-  const clusterGroups = useMemo(() => getClusteredProjects(scopedProjects), [scopedProjects]);
+  const clusterGroups = useMemo(() => getClusteredProjects(scopedProjects), [getClusteredProjects, scopedProjects]);
 
   const selectedProject = useMemo(
     () => scopedProjects.find((project) => project.id === selectedProjectId) ?? scopedProjects[0] ?? null,
@@ -98,6 +119,23 @@ const gis = () => {
   const toggleLayer = (layerId) => {
     setVisibleLayers((current) => ({ ...current, [layerId]: !current[layerId] }));
   };
+
+  if (!gismap) {
+    return (
+      <section className="dashboard-card">
+        <div className="panel-header">
+          <div>
+            <p className="section-kicker">Spatial view</p>
+            <h2>Mini GIS Risk Map</h2>
+          </div>
+          <span className="section-badge">Loading</span>
+        </div>
+        <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+          Loading GIS map…
+        </div>
+      </section>
+    );
+  }
 
   if (!scopedProjects.length) {
     return (
@@ -159,9 +197,12 @@ const gis = () => {
             className="h-full w-full"
             attributionControl={false}
             style={{ zIndex: 1 }}
+            whenReady={(event) => {
+              mapRef.current = event.target;
+              resetMapView();
+            }}
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <MapBoundsController projects={scopedProjects} mapRef={mapRef} />
 
             {scopedProjects.map((project) => {
               const geometry = getProjectGeometry(project);
@@ -294,23 +335,6 @@ const gis = () => {
         </div>
       </div>
 
-      {/* <div className="mt-3 flex flex-wrap gap-2">
-        {Object.entries({ markers: "Project markers", routes: "Routes / buffers", parcels: "Cadastral parcels", riskZones: "Risk zones" }).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => toggleLayer(key)}
-            className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-              visibleLayers[key]
-                ? "border-slate-200 bg-slate-50 text-slate-700"
-                : "border-slate-200 bg-white text-slate-400"
-            }`}
-          >
-            <span className={`h-2.5 w-2.5 rounded-full ${visibleLayers[key] ? "bg-emerald-500" : "bg-slate-300"}`} />
-            {label}
-          </button>
-        ))}
-      </div> */}
 
       <div className="mt-3 flex flex-wrap gap-2">
         {Object.entries(riskColors).map(([label, color]) => (
@@ -320,68 +344,6 @@ const gis = () => {
           </span>
         ))}
       </div>
-
-      {/* {selectedProject && (
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-semibold text-slate-900">{selectedProject.name}</h3>
-                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${riskTone[selectedProject.riskCategory] || riskTone["N/A"]}`}>
-                  {selectedProject.riskCategory}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">{selectedProject.projectId} • {selectedProject.district}</p>
-            </div>
-            <Link
-              href={`/roles/nodal-officer/projects/${selectedProject.id}`}
-              className="inline-flex items-center gap-1 rounded-xl bg-slate-900 px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-slate-800"
-            >
-              View Details
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Project Type</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{selectedProject.type}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Acquisition Progress</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{getAcquisitionProgress(selectedProject)}%</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Current Status</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{selectedProject.status}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">AI Delay Risk %</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{selectedProject.riskProbability}%</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Risk Category</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{selectedProject.riskCategory}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Risk Trend</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{getRiskTrend(selectedProject)}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-2.5 sm:col-span-2 xl:col-span-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Last Updated</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{selectedProject.updatedAt}</p>
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {/* <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
-        <div className="flex items-center gap-2">
-          <Layers3 className="h-3.5 w-3.5" />
-          {selectedProject ? "Mapped project selected" : "No project selected"}
-        </div>
-        <span>{getInterventionStatus(selectedProject || PROJECTS[0]) === "Yes" ? "Intervention required" : "Monitoring"}</span>
-      </div> */}
     </section>
   );
 };
