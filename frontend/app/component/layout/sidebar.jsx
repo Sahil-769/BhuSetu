@@ -62,6 +62,9 @@ const Sidebar = () => {
     }
 
     if (targetPath === "/roles/LandAcqOfficer/settings") {
+      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    }
+
     if (targetPath === "/roles/project-officer/") {
       return currentPath === "/roles/project-officer";
     }
