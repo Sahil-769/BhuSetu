@@ -45,47 +45,21 @@ const Sidebar = () => {
     const currentPath = normalizePath(pathname);
     const targetPath = normalizePath(url);
 
-    if (targetPath === "/roles/LandAcqOfficer/") {
-      return currentPath === "/roles/LandAcqOfficer/dashboard";
+    const rootMatches = {
+      "/roles/LandAcqOfficer": ["/roles/LandAcqOfficer", "/roles/LandAcqOfficer/dashboard"],
+      "/roles/project-officer": ["/roles/project-officer", "/roles/project-officer/dashboard"],
+      "/roles/nodal-officer": ["/roles/nodal-officer", "/roles/nodal-officer/dashboard"],
+    };
+
+    if (rootMatches[targetPath]) {
+      return rootMatches[targetPath].includes(currentPath);
     }
 
-    if (targetPath === "/roles/LandAcqOfficer/my-project") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+    if (currentPath === targetPath) {
+      return true;
     }
 
-    if (targetPath === "/roles/LandAcqOfficer/create-project") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    }
-
-    if (targetPath === "/roles/LandAcqOfficer/notification") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    }
-
-    if (targetPath === "/roles/LandAcqOfficer/settings") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    }
-
-    if (targetPath === "/roles/project-officer/") {
-      return currentPath === "/roles/project-officer";
-    }
-
-    if (targetPath === "/roles/project-officer/my-project") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    }
-
-    if (targetPath === "/roles/project-officer/create-project") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    }
-
-    if (targetPath === "/roles/project-officer/notification") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    }
-
-    if (targetPath === "/roles/project-officer/settings") {
-      return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
-    }
-
-    return currentPath === targetPath;
+    return currentPath.startsWith(`${targetPath}/`);
   };
 
   const toggleNavbar = () => {
