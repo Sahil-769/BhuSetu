@@ -27,6 +27,15 @@ const HeaderConfig = {
       state: "Delhi",
       district: "Ujwa",
     },
+    'system-admin': {
+      title: "System Admin",
+      profileImg: "/images/logo.png",
+      officerName: "System Administrator",
+      logout: { name: "LogOut", url: "/roles/admin/logout", icon: "➜" },
+      role: "System Admin",
+      state: "Uttar Pradesh",
+      district: "State Office",
+    },
   },
 };
 

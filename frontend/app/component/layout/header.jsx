@@ -9,23 +9,28 @@ import { IoMdSettings } from "react-icons/io";
 import { VscSignOut } from "react-icons/vsc";
 import { CgProfile } from "react-icons/cg";
 import Image from "next/image";
-import Link from "next/link";
 import "./header.css";
 import HeaderConfig from "../../config/header.config";
+import ProfilePopup from "@/components/ProfilePopup";
+import SettingsPopup from "@/components/SettingsPopup";
 
 const Header = ({ title }) => {
   const pathname = usePathname();
   const { isCollapsed, setShowNavbar } = useLayout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
+  const [isSettingsPopupOpen, setIsSettingsPopupOpen] = useState(false);
 
   const currentRole = pathname?.startsWith("/roles/project-officer")
     ? "project-officer"
     : pathname?.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
-      : "nodal-officer";
+      : pathname?.startsWith("/roles/admin")
+        ? "system-admin"
+        : "nodal-officer";
 
-  const currentUser = HeaderConfig.roles[currentRole];
+  const currentUser = HeaderConfig.roles[currentRole] ?? HeaderConfig.roles["nodal-officer"];
 
   const toggleDropdown = () => {
     setIsDropdownOpen((prev) => {
@@ -50,9 +55,9 @@ const Header = ({ title }) => {
   }, [dropdownRef]);
 
   return (
-    <header className="h-15 md:z-[9999]">
+    <header className="h-15 z-1000">
       <div
-        className={`fixed top-0 right-0 z-60 bg-[#fdfdff] shadow-sm
+        className={`fixed top-0 right-0 z-1000 bg-[#fdfdff] shadow-sm
         flex justify-between items-center md:px-2 md:pr-5 md:py-4 h-16
         transition-all duration-300 left-0
         ${isCollapsed ? "md:left-20" : "left-0 md:left-64"}`}
@@ -73,7 +78,7 @@ const Header = ({ title }) => {
             <GiHamburgerMenu />
           </button>
           <div className="inline-flex items-center justify-center">
-            <span className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-slate-200 text-slate-800 font-semibold text-sm shadow-inner ring-1 ring-slate-900/5">
+            <span className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-linear-to-r from-slate-100 to-slate-200 text-slate-800 font-semibold text-sm shadow-inner ring-1 ring-slate-900/5">
               {title}
             </span>
           </div>
@@ -111,9 +116,11 @@ const Header = ({ title }) => {
                 className="absolute right-0 mt-2 w-45 bg-white rounded-md shadow-lg z-50 transform origin-top-right animate-dropdown will-change-transform p-2 flex flex-col gap-2"
               >
                 <button
+                  type="button"
                   className="menu-item"
                   onClick={() => {
-                    console.log("My Profile clicked");
+                    setIsDropdownOpen(false);
+                    setIsProfilePopupOpen(true);
                   }}
                 >
                   <span className="flex items-center gap-2">
@@ -121,13 +128,15 @@ const Header = ({ title }) => {
                   </span>
                 </button>
                 <button
+                  type="button"
                   className="menu-item"
                   onClick={() => {
-                    console.log("Settings clicked");
+                    setIsDropdownOpen(false);
+                    setIsSettingsPopupOpen(true);
                   }}
                 >
                   <span className="flex items-center gap-2">
-                    <IoMdSettings /> <Link href="/roles/project-officer/settings">Settings</Link>
+                    <IoMdSettings /> Settings
                   </span>
                 </button>
                 <button
@@ -151,6 +160,18 @@ const Header = ({ title }) => {
           </div>
         </div>
       </div>
+
+      <ProfilePopup
+        role={currentRole}
+        isOpen={isProfilePopupOpen}
+        onClose={() => setIsProfilePopupOpen(false)}
+      />
+
+      <SettingsPopup
+        role={currentRole}
+        isOpen={isSettingsPopupOpen}
+        onClose={() => setIsSettingsPopupOpen(false)}
+      />
     </header>
   );
 };

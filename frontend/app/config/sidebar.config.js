@@ -12,7 +12,6 @@ const SidebarConfig = {
         { name: "My Project", url: `/roles/${roles[0]}/my-project`, icon: "🗂️" },
         { name: "Create Project", url: `/roles/${roles[0]}/create-project`, icon: "➕" },
         { name: "Notificatiion", url: `/roles/${roles[0]}/notification`, icon: "🔔" },
-        { name: "Settings", url: `/roles/${roles[0]}/settings`, icon: "⚙️" },
       ],
     },
     'LandAcqOfficer': {
@@ -43,7 +42,6 @@ const SidebarConfig = {
         { name: "Risk Map", url: `/roles/${roles[2]}/risk-map`, icon: "🚨" },
         { name: "Analytics", url: `/roles/${roles[2]}/analytics`, icon: "🎯" },
         { name: "Notifications", url: `/roles/${roles[2]}/notification`, icon: "🔔" },
-        { name: "Settings", url: `/roles/${roles[2]}/settings`, icon: "⚙️" },
       ],
     },
   },

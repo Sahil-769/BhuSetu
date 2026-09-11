@@ -1,79 +1,94 @@
-import React from 'react';
+import React from 'react'
+
 const kpiData = [
   {
     id: 'total-projects',
     label: 'Total Projects',
-    value: 3,
+    value: 18,
+    delta: '+4.2%',
+    trendClass: 'low',
     icon: (
-      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
+        <path d="M8 5V3.75M16 5V3.75M4 10h16" />
       </svg>
     ),
-    badgeColor: 'bg-blue-100 text-blue-700',
+    badgeColor: 'background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); color: #1d4ed8;'
   },
   {
-    id: 'high-risk',
-    label: 'High Risk Projects',
-    value: 4,
+    id: 'high-critical',
+    label: 'High / Critical',
+    value: 6,
+    delta: '+1.1%',
+    trendClass: 'critical',
     icon: (
-      <svg className="w-5 h-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
       </svg>
     ),
-    badgeColor: 'bg-rose-100 text-rose-700',
+    badgeColor: 'background: linear-gradient(135deg, #fee2e2 0%, #fff1f2 100%); color: #dc2626;'
+  },
+  {
+    id: 'medium-risk',
+    label: 'Medium Risk',
+    value: 7,
+    delta: '-0.8%',
+    trendClass: 'medium',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 2v10M12 22V12M18 6l-6 6-6-6" />
+      </svg>
+    ),
+    badgeColor: 'background: linear-gradient(135deg, #fef3c7 0%, #fff7ed 100%); color: #d97706;'
+  },
+  {
+    id: 'low-risk',
+    label: 'Low Risk',
+    value: 5,
+    delta: '+2.5%',
+    trendClass: 'low',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M7 12.5 10 15.5 17 8.5" />
+        <circle cx="12" cy="12" r="9" />
+      </svg>
+    ),
+    badgeColor: 'background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); color: #16a34a;'
   },
   {
     id: 'pending-interventions',
     label: 'Pending Interventions',
-    value: 5,
+    value: 11,
+    delta: '+3.1%',
+    trendClass: 'medium',
     icon: (
-      <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
       </svg>
     ),
-    badgeColor: 'bg-amber-100 text-amber-700 ',
-  },
-  {
-    id: 'completed-projects',
-    label: 'Completed Projects',
-    value: 12,
-    icon: (
-      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    badgeColor: 'bg-emerald-100 text-emerald-700',
-  },
-];
+    badgeColor: 'background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%); color: #7c3aed;'
+  }
+]
 
 const KpiCards = () => {
   return (
-    <section className="w-full max-w-7xl mx-auto p-4 sm:p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {kpiData.map((item) => (
-          <div
-            key={item.id}
-            className="group relative flex flex-col justify-between p-5 bg-white border border-slate-200/80  rounded-xl shadow-xs hover:shadow-md transition-all duration-200 ease-in-out hover:-translate-y-0.5"
-          >
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <span className="text-sm font-medium text-slate-800 dark:text-slate-800 leading-tight">
-                {item.label}
-              </span>
-              <div className={`p-2.5 rounded-lg ${item.badgeColor} transition-transform group-hover:scale-105`}>
-                {item.icon}
-              </div>
-            </div>
-
-            <div className="flex items-baseline justify-between mt-auto">
-              <span className="text-3xl font-bold tracking-tight text-slate-900 ">
-                {item.value}
-              </span>
-            </div>
+    <section className="kpi-grid" aria-label="State overview KPI cards">
+      {kpiData.map((item) => (
+        <article key={item.id} className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">{item.label}</span>
+            <div className={`kpi-icon ${item.badgeColor}`}>{item.icon}</div>
           </div>
-        ))}
-      </div>
-    </section>
-  );
-};
 
-export default KpiCards;
+          <div className="kpi-value-row">
+            <span className="kpi-value">{item.value}</span>
+            <span className={`kpi-trend ${item.trendClass}`}>{item.delta}</span>
+          </div>
+        </article>
+      ))}
+    </section>
+  )
+}
+
+export default KpiCards
