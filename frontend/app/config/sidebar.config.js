@@ -28,7 +28,7 @@ const SidebarConfig = {
         { name: "Map View", url: `/roles/${roles[1]}/gis`, icon: "📍" },
         { name: "Notifications", url: `/roles/${roles[1]}/notification`, icon: "🔔" },
         { name: "Reports", url: `/roles/${roles[1]}/gis`, icon: "📊" },
-        { name: "Settings", url: `/roles/${roles[1]}/settings`, icon: "⚙️" },
+
       ],
     },
     'nodal-officer': {
