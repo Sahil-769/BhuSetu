@@ -1,7 +1,14 @@
 "use client";
 import { createContext, useContext, useState } from "react";
 
-const LayoutContext = createContext();
+const defaultLayoutContext = {
+  isCollapsed: false,
+  setIsCollapsed: () => {},
+  showNavbar: false,
+  setShowNavbar: () => {},
+};
+
+const LayoutContext = createContext(defaultLayoutContext);
 
 export const LayoutProvider = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);

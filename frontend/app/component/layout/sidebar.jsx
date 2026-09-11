@@ -18,7 +18,7 @@ const Sidebar = () => {
     ? "project-officer"
     : pathname.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
-      : "role3";
+      : "nodal-officer";
 
   const currentRoleData =
     SidebarConfig.roles[currentRole];
