@@ -11,7 +11,7 @@ const Kpi = ({ title, value, delta, loading = false, icon: Icon }) => {
   const trendText = delta == null ? '—' : `${isPositive ? '+' : ''}${delta}%`;
 
   return (
-    <Card className="flex min-h-[160px] flex-col justify-between gap-4 p-4">
+    <Card className="flex min-h-[140px] flex-col justify-between gap-4 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
