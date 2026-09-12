@@ -1,932 +1,197 @@
 'use client'
-import React, { useState, useMemo } from 'react';
-import {Header} from '../../../component/layout/index'
+
+import { useEffect, useMemo, useState } from 'react'
 import {
-  Search,
-  Filter,
-  ChevronDown,
-  ChevronRight,
-  Eye,
-  MoreVertical,
-  ShieldAlert,
-  Edit2,
-  UserPlus,
-  Power,
-  MapPin,
-  Layers,
-  Plus,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  X,
-  Users,
-  Briefcase,
-  Building2,
-  Map as MapIcon,
-  RefreshCw
-} from 'lucide-react';
+	AlertCircle,
+	BadgeCheck,
+	Building2,
+	ChevronDown,
+	ChevronRight,
+	Eye,
+	Layers3,
+	LoaderCircle,
+	Map,
+	MapPin,
+	MoreVertical,
+	Pencil,
+	Plus,
+	Search,
+	ShieldCheck,
+	ToggleLeft,
+	Users,
+	X,
+} from 'lucide-react'
+import { Header } from '../../../component/layout/index'
+import { PROJECTS } from '../../project-officer/my-project/projects-data'
+import {
+	JURISDICTION_TYPES,
+	canManageJurisdiction,
+	getAdminProfile,
+	hasGlobalAccess,
+	normalizeUser,
+	readJurisdictions,
+	readOrSeedUsers,
+	recordAdminActivity,
+	saveJurisdictions,
+	saveUsers,
+} from '../../../lib/adminManagementStore'
 
+const emptyJurisdiction = { name: '', type: 'State', parentId: '', status: 'Active', coverage: '', boundary: '' }
 
-const INITIAL_JURISDICTIONS = [
-  {
-    id: 'jur-state-1',
-    name: 'Karnataka',
-    type: 'State',
-    parentId: null,
-    parentName: '-',
-    status: 'Active',
-    officersCount: 42,
-    projectsCount: 18,
-    boundaryGeoJSON: 'POLYGON((12.9 77.5, 13.1 77.6, 13.0 77.8, 12.8 77.5))',
-    adminId: 'usr-101',
-    adminName: 'Rajesh Kumar (Nodal)',
-    subJurisdictionIds: ['jur-dist-1', 'jur-dist-2']
-  },
-  {
-    id: 'jur-dist-1',
-    name: 'Bengaluru Urban',
-    type: 'District',
-    parentId: 'jur-state-1',
-    parentName: 'Karnataka',
-    status: 'Active',
-    officersCount: 15,
-    projectsCount: 8,
-    boundaryGeoJSON: 'POLYGON((12.95 77.55, 13.05 77.62, 12.98 77.70))',
-    adminId: 'usr-102',
-    adminName: 'Priya Sharma (DRO)',
-    subJurisdictionIds: ['jur-teh-1', 'jur-teh-2']
-  },
-  {
-    id: 'jur-teh-1',
-    name: 'Bengaluru North',
-    type: 'Tehsil/Block',
-    parentId: 'jur-dist-1',
-    parentName: 'Bengaluru Urban',
-    status: 'Active',
-    officersCount: 6,
-    projectsCount: 4,
-    boundaryGeoJSON: 'POLYGON((13.00 77.56, 13.05 77.60, 13.02 77.64))',
-    adminId: 'usr-103',
-    adminName: 'Amit V. (Tahsildar)',
-    subJurisdictionIds: ['jur-vil-1', 'jur-vil-2']
-  },
-  {
-    id: 'jur-vil-1',
-    name: 'Yelahanka Village',
-    type: 'Village',
-    parentId: 'jur-teh-1',
-    parentName: 'Bengaluru North',
-    status: 'Active',
-    officersCount: 2,
-    projectsCount: 2,
-    boundaryGeoJSON: 'POLYGON((13.03 77.57, 13.05 77.59, 13.04 77.61))',
-    adminId: 'usr-104',
-    adminName: 'Suresh Gowda (VA)',
-    subJurisdictionIds: []
-  },
-  {
-    id: 'jur-vil-2',
-    name: 'Hebbal West',
-    type: 'Village',
-    parentId: 'jur-teh-1',
-    parentName: 'Bengaluru North',
-    status: 'Inactive',
-    officersCount: 1,
-    projectsCount: 1,
-    boundaryGeoJSON: 'POLYGON((13.01 77.58, 13.03 77.60, 13.02 77.62))',
-    adminId: 'usr-105',
-    adminName: 'Kavitha R. (VA)',
-    subJurisdictionIds: []
-  },
-  {
-    id: 'jur-teh-2',
-    name: 'Anekal Tehsil',
-    type: 'Tehsil/Block',
-    parentId: 'jur-dist-1',
-    parentName: 'Bengaluru Urban',
-    status: 'Active',
-    officersCount: 4,
-    projectsCount: 2,
-    boundaryGeoJSON: 'POLYGON((12.78 77.68, 12.82 77.72, 12.79 77.75))',
-    adminId: 'usr-106',
-    adminName: 'Mahesh Reddy (Tahsildar)',
-    subJurisdictionIds: []
-  },
-  {
-    id: 'jur-dist-2',
-    name: 'Mysuru',
-    type: 'District',
-    parentId: 'jur-state-1',
-    parentName: 'Karnataka',
-    status: 'Active',
-    officersCount: 12,
-    projectsCount: 5,
-    boundaryGeoJSON: 'POLYGON((12.29 76.63, 12.35 76.68, 12.30 76.72))',
-    adminId: 'usr-107',
-    adminName: 'Sunil Verma (DRO)',
-    subJurisdictionIds: []
-  }
-];
+const statusTone = {
+	Active: 'bg-emerald-50 text-emerald-700',
+	Inactive: 'bg-slate-100 text-slate-600',
+	Pending: 'bg-amber-50 text-amber-700',
+}
 
-// Available Officers for Assignment
-const OFFICERS_LIST = [
-  { id: 'usr-101', name: 'Rajesh Kumar (Nodal)' },
-  { id: 'usr-102', name: 'Priya Sharma (DRO)' },
-  { id: 'usr-103', name: 'Amit V. (Tahsildar)' },
-  { id: 'usr-104', name: 'Suresh Gowda (VA)' },
-  { id: 'usr-105', name: 'Kavitha R. (VA)' },
-  { id: 'usr-106', name: 'Mahesh Reddy (Tahsildar)' },
-  { id: 'usr-107', name: 'Sunil Verma (DRO)' },
-  { id: 'usr-108', name: 'Ananya Rao (Survey Officer)' }
-];
+function Modal({ title, onClose, children, wide = false }) {
+	return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><div className={`max-h-[92vh] w-full overflow-y-auto rounded-3xl border border-white/70 bg-white shadow-2xl ${wide ? 'max-w-3xl' : 'max-w-lg'}`}><header className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 className="text-base font-bold text-slate-900">{title}</h2><button type="button" onClick={onClose} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><X className="h-4 w-4" /></button></header>{children}</div></div>
+}
 
-export default function AdminJurisdictionTab() {
+function Field({ label, value, onChange, required = false, placeholder = '' }) {
+	return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">{label}{required ? ' *' : ''}</span><input required={required} value={value || ''} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" /></label>
+}
 
-  const [jurisdictions, setJurisdictions] = useState(INITIAL_JURISDICTIONS);
-  
-  // Access Control Simulation: Admin's scope restriction
-  const [currentAdminRole, setCurrentAdminRole] = useState({
-    name: 'Priya Sharma (DRO)',
-    allowedScope: 'Bengaluru Urban', // Can only manage items under Bengaluru Urban
-    unrestricted: false
-  });
+function SelectField({ label, value, options, onChange }) {
+	return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">{label}</span><span className="relative block"><select value={value} onChange={(event) => onChange(event.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-8 text-sm text-slate-800 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100">{options.map((option) => <option key={option} value={option}>{option}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /></span></label>
+}
 
-  // Filters & Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('All');
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [filterOfficer, setFilterOfficer] = useState('All');
+function DetailCard({ icon: Icon, label, children }) {
+	return <div className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50/70 p-3"><div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500"><Icon className="h-3.5 w-3.5 text-emerald-600" />{label}</div><div className="mt-1.5 min-w-0 text-sm font-semibold text-slate-800">{children}</div></div>
+}
 
-  // Interactive UI states
-  const [expandedRows, setExpandedRows] = useState(['jur-state-1', 'jur-dist-1']);
-  const [selectedJurisdiction, setSelectedJurisdiction] = useState(null);
-  const [activeMenuId, setActiveMenuId] = useState(null);
+export default function JurisdictionPage() {
+	const [jurisdictions, setJurisdictions] = useState([])
+	const [users, setUsers] = useState([])
+	const [profile, setProfile] = useState(null)
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState('')
+	const [query, setQuery] = useState('')
+	const [filters, setFilters] = useState({ type: 'All', status: 'All' })
+	const [expanded, setExpanded] = useState([])
+	const [menuId, setMenuId] = useState(null)
+	const [detail, setDetail] = useState(null)
+	const [editor, setEditor] = useState(null)
+	const [assigning, setAssigning] = useState(null)
+	const [confirm, setConfirm] = useState(null)
+	const [notice, setNotice] = useState('')
 
-  // Modals
-  const [viewModalData, setViewModalData] = useState(null);
-  const [editModalData, setEditModalData] = useState(null);
-  const [assignModalData, setAssignModalData] = useState(null);
-  const [confirmModalData, setConfirmModalData] = useState(null);
+	useEffect(() => {
+		Promise.all([Promise.resolve(readJurisdictions()), readOrSeedUsers()]).then(([nextJurisdictions, nextUsers]) => {
+			setJurisdictions(nextJurisdictions)
+			setUsers(nextUsers)
+			setProfile(getAdminProfile())
+			setExpanded(nextJurisdictions.filter((item) => item.type === 'State').map((item) => item.id))
+		}).catch((loadError) => setError(loadError.message || 'Unable to load jurisdiction data.')).finally(() => setLoading(false))
+	}, [])
 
-  // Feedback Notification State
-  const [toast, setToast] = useState(null);
+	const globalAccess = hasGlobalAccess(profile)
+	const scopeMatches = (item) => {
+		if (globalAccess) return true
+		const scopeValues = [profile?.district, profile?.state, profile?.jurisdiction].filter(Boolean).map((value) => String(value).toLowerCase())
+		return [item.state, item.district, item.tehsil, item.village, item.name].some((value) => scopeValues.includes(String(value || '').toLowerCase()))
+	}
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+	const isVisible = (item) => {
+		if (globalAccess || scopeMatches(item)) return true
+		let parent = jurisdictions.find((candidate) => candidate.id === item.parentId)
+		while (parent) {
+			if (scopeMatches(parent)) return true
+			parent = jurisdictions.find((candidate) => candidate.id === parent.parentId)
+		}
+		return false
+	}
 
-  const canManage = (item) => {
-    if (currentAdminRole.unrestricted) return true;
-    if (item.name === currentAdminRole.allowedScope) return true;
-    if (item.parentName === currentAdminRole.allowedScope) return true;
-    // Check deep ancestry (simplified check for mock)
-    const parent = jurisdictions.find(j => j.id === item.parentId);
-    if (parent && parent.parentName === currentAdminRole.allowedScope) return true;
-    return false;
-  };
+	const canManage = (item) => globalAccess || canManageJurisdiction(profile, item) || (() => {
+		let parent = jurisdictions.find((candidate) => candidate.id === item.parentId)
+		while (parent) {
+			if (canManageJurisdiction(profile, parent)) return true
+			parent = jurisdictions.find((candidate) => candidate.id === parent.parentId)
+		}
+		return false
+	})()
 
-  const metrics = useMemo(() => {
-    const counts = { State: 0, District: 0, 'Tehsil/Block': 0, Village: 0 };
-    let totalProjects = 0;
-    let totalOfficers = 0;
+	const projectCounts = useMemo(() => jurisdictions.reduce((counts, item) => {
+		counts[item.id] = PROJECTS.filter((project) => project.state === item.state && (!item.district || project.district === item.district) && (!item.tehsil || project.tehsil === item.tehsil) && (!item.village || project.village === item.village)).length
+		return counts
+	}, {}), [jurisdictions])
 
-    jurisdictions.forEach(j => {
-      if (counts[j.type] !== undefined) counts[j.type]++;
-      totalProjects += j.projectsCount;
-      totalOfficers += j.officersCount;
-    });
+	const officerCounts = useMemo(() => jurisdictions.reduce((counts, item) => {
+		counts[item.id] = users.filter((user) => user.status === 'Active' && user.state === item.state && (!item.district || user.district === item.district)).length
+		return counts
+	}, {}), [jurisdictions, users])
 
-    return { ...counts, totalProjects, totalOfficers };
-  }, [jurisdictions]);
+	const visibleItems = useMemo(() => jurisdictions.filter((item) => isVisible(item)).filter((item) => {
+		const haystack = `${item.name} ${item.state} ${item.district} ${item.tehsil} ${item.village} ${item.coverage}`.toLowerCase()
+		return haystack.includes(query.toLowerCase()) && (filters.type === 'All' || item.type === filters.type) && (filters.status === 'All' || item.status === filters.status)
+	}), [jurisdictions, query, filters, profile])
 
-  const filteredJurisdictions = useMemo(() => {
-    return jurisdictions.filter(j => {
-      const matchesSearch = j.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            j.parentName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = filterType === 'All' || j.type === filterType;
-      const matchesStatus = filterStatus === 'All' || j.status === filterStatus;
-      const matchesOfficer = filterOfficer === 'All' || j.adminName === filterOfficer;
+	const childrenOf = (parentId) => visibleItems.filter((item) => item.parentId === parentId)
+	const roots = visibleItems.filter((item) => !item.parentId)
+	const toggleExpanded = (id) => setExpanded((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])
 
-      return matchesSearch && matchesType && matchesStatus && matchesOfficer;
-    });
-  }, [jurisdictions, searchQuery, filterType, filterStatus, filterOfficer]);
+	const persistJurisdictions = (next, action, target) => {
+		setJurisdictions(next)
+		saveJurisdictions(next)
+		recordAdminActivity({ action, module: 'Jurisdiction', target })
+		setNotice(`${action} completed.`)
+		setMenuId(null)
+	}
 
-  const toggleRowExpand = (id) => {
-    setExpandedRows(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
+	const saveEditor = (event) => {
+		event.preventDefault()
+		const form = new FormData(event.currentTarget)
+		const data = Object.fromEntries(form.entries())
+		const parent = jurisdictions.find((item) => item.id === data.parentId)
+		if (!data.name.trim()) return setError('Jurisdiction name is required.')
+		if (editor.mode === 'create' && data.type !== 'State' && !parent) return setError('Select a valid parent jurisdiction.')
+		if (editor.mode === 'edit' && !canManage(editor.item)) return setError('You cannot edit outside your authorized jurisdiction.')
+		const base = editor.mode === 'edit' ? editor.item : { id: `jur-${Date.now()}`, adminIds: [] }
+		const next = { ...base, ...data, parentId: data.type === 'State' ? null : data.parentId, state: data.type === 'State' ? data.name : parent?.state || base.state || '', district: data.type === 'District' ? data.name : parent?.district || base.district || '', tehsil: data.type === 'Tehsil/Block' ? data.name : parent?.tehsil || base.tehsil || '', village: data.type === 'Village' ? data.name : parent?.village || base.village || '' }
+		persistJurisdictions(editor.mode === 'edit' ? jurisdictions.map((item) => item.id === base.id ? next : item) : [...jurisdictions, next], editor.mode === 'edit' ? 'Jurisdiction updated' : 'Jurisdiction created', next.name)
+		setEditor(null)
+		setError('')
+	}
 
-  const handleToggleStatus = (item) => {
-    if (!canManage(item)) {
-      showToast('Access Denied: You cannot modify this jurisdiction scope.', 'error');
-      setActiveMenuId(null);
-      return;
-    }
+	const toggleStatus = (item) => {
+		if (!canManage(item)) return setError('You cannot modify outside your authorized jurisdiction.')
+		const nextStatus = item.status === 'Active' ? 'Inactive' : 'Active'
+		setConfirm({ title: `${nextStatus} jurisdiction?`, message: `Change ${item.name} to ${nextStatus}?`, onConfirm: () => { persistJurisdictions(jurisdictions.map((entry) => entry.id === item.id ? { ...entry, status: nextStatus } : entry), `Jurisdiction ${nextStatus.toLowerCase()}`, item.name); setConfirm(null) } })
+	}
 
-    const nextStatus = item.status === 'Active' ? 'Inactive' : 'Active';
-    setConfirmModalData({
-      title: `${nextStatus === 'Active' ? 'Activate' : 'Deactivate'} Jurisdiction`,
-      message: `Are you sure you want to change status of "${item.name}" to ${nextStatus}?`,
-      onConfirm: () => {
-        setJurisdictions(prev =>
-          prev.map(j => j.id === item.id ? { ...j, status: nextStatus } : j)
-        );
-        showToast(`Status updated to ${nextStatus} for ${item.name}`);
-        setConfirmModalData(null);
-      }
-    });
-    setActiveMenuId(null);
-  };
+	const saveAssignments = (event) => {
+		event.preventDefault()
+		const ids = [...new FormData(event.currentTarget).entries()].filter(([key, value]) => key === 'userId' && value).map(([, value]) => value)
+		const item = assigning.item
+		if (!canManage(item)) return setError('You cannot assign officers outside your authorized jurisdiction.')
+		const nextUsers = users.map((user) => ids.includes(user.id) ? normalizeUser({ ...user, state: item.state, district: item.district || user.district, jurisdiction: `${item.type} Level` }) : user)
+		setUsers(nextUsers)
+		saveUsers(nextUsers)
+		persistJurisdictions(jurisdictions.map((entry) => entry.id === item.id ? { ...entry, adminIds: ids } : entry), 'Officers assigned', item.name)
+		setAssigning(null)
+	}
 
-  const handleSaveEdit = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const updatedName = formData.get('name');
-    const updatedGeo = formData.get('boundaryGeoJSON');
+	const availableUsers = users.filter((user) => ['Project Officer', 'Land Acquisition Officer', 'Nodal Officer', 'System Admin'].includes(user.role) && user.status === 'Active' && (globalAccess || user.state === profile?.state || user.district === profile?.district))
 
-    if (!updatedName) {
-      showToast('Jurisdiction Name is required', 'error');
-      return;
-    }
+	const renderTree = (item, depth = 0) => {
+		const children = childrenOf(item.id)
+		const isOpen = expanded.includes(item.id)
+		return <div key={item.id}><div className="group flex items-center gap-2 border-b border-slate-100 px-4 py-3 transition hover:bg-emerald-50/40" style={{ paddingLeft: `${16 + depth * 24}px` }}><button type="button" onClick={() => toggleExpanded(item.id)} className={`flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 ${children.length ? 'hover:bg-slate-100 hover:text-slate-700' : 'invisible'}`} aria-label={isOpen ? 'Collapse' : 'Expand'}>{isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</button><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><MapPin className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{item.name}</p><p className="truncate text-[11px] text-slate-500">{item.type} · {item.state || 'State not set'}</p></div><span className="hidden rounded-full bg-sky-50 px-2 py-1 text-[10px] font-semibold text-sky-700 sm:inline-flex">{projectCounts[item.id] || 0} projects</span><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${statusTone[item.status] || statusTone.Pending}`}>{item.status}</span><div className="relative"><button type="button" onClick={() => setMenuId(menuId === item.id ? null : item.id)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={`Actions for ${item.name}`}><MoreVertical className="h-4 w-4" /></button>{menuId === item.id ? <div className="absolute right-0 top-10 z-20 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"><button type="button" onClick={() => { setDetail(item); setMenuId(null) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50"><Eye className="h-3.5 w-3.5" />View details</button><button type="button" disabled={!canManage(item)} onClick={() => { setEditor({ mode: 'edit', item }); setMenuId(null) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><Pencil className="h-3.5 w-3.5" />Edit jurisdiction</button><button type="button" disabled={!canManage(item)} onClick={() => { setAssigning({ item }); setMenuId(null) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><Users className="h-3.5 w-3.5" />Assign officers</button><button type="button" disabled={!canManage(item)} onClick={() => { setMenuId(null); toggleStatus(item) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ToggleLeft className="h-3.5 w-3.5" />{item.status === 'Active' ? 'Deactivate' : 'Activate'}</button></div> : null}</div></div>{isOpen ? children.map((child) => renderTree(child, depth + 1)) : null}</div>
+	}
 
-    setJurisdictions(prev =>
-      prev.map(j =>
-        j.id === editModalData.id
-          ? { ...j, name: updatedName, boundaryGeoJSON: updatedGeo }
-          : j
-      )
-    );
-    showToast(`Jurisdiction "${updatedName}" updated successfully.`);
-    setEditModalData(null);
-  };
+	if (loading) return <><Header title="Jurisdiction" /><main className="flex min-h-[70vh] items-center justify-center bg-slate-50"><LoaderCircle className="h-7 w-7 animate-spin text-emerald-600" /></main></>
+	if (error && !jurisdictions.length) return <><Header title="Jurisdiction" /><main className="min-h-[70vh] bg-slate-50 p-6"><div className="mx-auto max-w-lg rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm"><AlertCircle className="mx-auto h-9 w-9 text-rose-500" /><h1 className="mt-3 text-lg font-bold text-slate-900">Unable to load jurisdiction</h1><p className="mt-2 text-sm text-slate-600">{error}</p></div></main></>
 
-  const handleSaveAssignment = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const selectedOfficerId = formData.get('officerId');
-    const officerObj = OFFICERS_LIST.find(o => o.id === selectedOfficerId);
-
-    if (!officerObj) return;
-
-    setJurisdictions(prev =>
-      prev.map(j =>
-        j.id === assignModalData.id
-          ? { ...j, adminId: officerObj.id, adminName: officerObj.name }
-          : j
-      )
-    );
-    showToast(`Assigned ${officerObj.name} to ${assignModalData.name}`);
-    setAssignModalData(null);
-  };
-
-  // Render tree row recursively or linearly based on view
-  const renderJurisdictionTree = (parentId = null, depth = 0) => {
-    const nodes = filteredJurisdictions.filter(j => j.parentId === parentId);
-    if (nodes.length === 0) return null;
-
-    return nodes.map(node => {
-      const hasChildren = jurisdictions.some(j => j.parentId === node.id);
-      const isExpanded = expandedRows.includes(node.id);
-      const isPermitted = canManage(node);
-
-      return (
-        <React.Fragment key={node.id}>
-          <tr
-            className={`border-b border-gray-100 hover:bg-slate-50 transition-colors ${
-              selectedJurisdiction?.id === node.id ? 'bg-emerald-50/60' : ''
-            }`}
-          >
-            {/* Name + Hierarchy indentation */}
-            <td className="py-3 px-4">
-              <div
-                className="flex items-center space-x-2"
-                style={{ paddingLeft: `${depth * 1.5}rem` }}
-              >
-                {hasChildren ? (
-                  <button
-                    onClick={() => toggleRowExpand(node.id)}
-                    className="p-1 rounded hover:bg-gray-200 text-gray-500"
-                  >
-                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                  </button>
-                ) : (
-                  <span className="w-6" />
-                )}
-                <span
-                  onClick={() => setSelectedJurisdiction(node)}
-                  className="font-medium text-slate-800 hover:text-emerald-600 cursor-pointer flex items-center space-x-1.5"
-                >
-                  <span>{node.name}</span>
-                  {!isPermitted && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-normal">
-                      Read-Only
-                    </span>
-                  )}
-                </span>
-              </div>
-            </td>
-
-            {/* Type */}
-            <td className="py-3 px-4 text-sm">
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                node.type === 'State' ? 'bg-purple-100 text-purple-700' :
-                node.type === 'District' ? 'bg-blue-100 text-blue-700' :
-                node.type === 'Tehsil/Block' ? 'bg-indigo-100 text-indigo-700' :
-                'bg-emerald-100 text-emerald-700'
-              }`}>
-                {node.type}
-              </span>
-            </td>
-
-            {/* Parent */}
-            <td className="py-3 px-4 text-sm text-gray-600">{node.parentName}</td>
-
-            {/* Projects */}
-            <td className="py-3 px-4 text-sm text-gray-700 font-medium">
-              <div className="flex items-center space-x-1">
-                <Briefcase className="w-3.5 h-3.5 text-gray-400" />
-                <span>{node.projectsCount}</span>
-              </div>
-            </td>
-
-            {/* Officers */}
-            <td className="py-3 px-4 text-sm text-gray-700">
-              <div className="flex items-center space-x-1">
-                <Users className="w-3.5 h-3.5 text-gray-400" />
-                <span>{node.officersCount}</span>
-              </div>
-            </td>
-
-            {/* Admin / Officer */}
-            <td className="py-3 px-4 text-sm text-slate-700">
-              <div className="text-xs font-medium text-slate-900">{node.adminName}</div>
-            </td>
-
-            {/* Status */}
-            <td className="py-3 px-4 text-sm">
-              <span className={`inline-flex items-center space-x-1 text-xs px-2 py-0.5 rounded-full font-medium ${
-                node.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${node.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                <span>{node.status}</span>
-              </span>
-            </td>
-
-            {/* Actions */}
-            <td className="py-3 px-4 text-sm text-right relative">
-              <div className="flex items-center justify-end space-x-2">
-                <button
-                  onClick={() => setViewModalData(node)}
-                  className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                  title="View Details"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-
-                {/* 3-Dot Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setActiveMenuId(activeMenuId === node.id ? null : node.id)}
-                    className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-
-                  {activeMenuId === node.id && (
-                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-30 text-left py-1 animate-in fade-in duration-150">
-                      <button
-                        onClick={() => {
-                          if (!isPermitted) {
-                            showToast('Access Denied for editing this scope', 'error');
-                            setActiveMenuId(null);
-                            return;
-                          }
-                          setEditModalData(node);
-                          setActiveMenuId(null);
-                        }}
-                        className={`w-full px-4 py-2 text-xs text-slate-700 flex items-center space-x-2 ${
-                          isPermitted ? 'hover:bg-slate-50 hover:text-emerald-600' : 'opacity-50 cursor-not-allowed'
-                        }`}
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                        <span>Edit Details</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleToggleStatus(node)}
-                        className={`w-full px-4 py-2 text-xs text-slate-700 flex items-center space-x-2 ${
-                          isPermitted ? 'hover:bg-slate-50 hover:text-amber-600' : 'opacity-50 cursor-not-allowed'
-                        }`}
-                      >
-                        <Power className="w-3.5 h-3.5" />
-                        <span>{node.status === 'Active' ? 'Deactivate' : 'Activate'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (!isPermitted) {
-                            showToast('Access Denied for assigning officers here', 'error');
-                            setActiveMenuId(null);
-                            return;
-                          }
-                          setAssignModalData(node);
-                          setActiveMenuId(null);
-                        }}
-                        className={`w-full px-4 py-2 text-xs text-slate-700 flex items-center space-x-2 ${
-                          isPermitted ? 'hover:bg-slate-50 hover:text-blue-600' : 'opacity-50 cursor-not-allowed'
-                        }`}
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>Assign Admin</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setSelectedJurisdiction(node);
-                          setActiveMenuId(null);
-                        }}
-                        className="w-full px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-indigo-600 flex items-center space-x-2 border-t border-gray-100"
-                      >
-                        <MapIcon className="w-3.5 h-3.5" />
-                        <span>Manage Coverage (Map)</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </td>
-          </tr>
-
-          {/* Render Children if expanded */}
-          {isExpanded && renderJurisdictionTree(node.id, depth + 1)}
-        </React.Fragment>
-      );
-    });
-  };
-
-  return (
-    <>
-    <Header title="Jurisdication"/>
-    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 space-y-6">
-      
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center space-x-2 px-4 py-3 rounded-lg shadow-lg text-white text-sm transition-all transform animate-bounce ${
-          toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'
-        }`}>
-          {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
-          <span>{toast.message}</span>
-        </div>
-      )}
-
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2">
-            <span>BHOOMI-AI Jurisdiction Control</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-              Admin Portal
-            </span>
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage administrative boundaries, field officers, and spatial project assignments.
-          </p>
-        </div>
-
-        {/* Access Control Switcher (Demo Feature) */}
-        <div className="flex items-center space-x-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
-          <ShieldAlert className="w-5 h-5 text-amber-500" />
-          <div className="text-xs">
-            <span className="text-slate-500 block">Active Scope Context:</span>
-            <span className="font-semibold text-slate-800">
-              {currentAdminRole.unrestricted ? 'Super Admin (All Scope)' : currentAdminRole.allowedScope}
-            </span>
-          </div>
-          <button
-            onClick={() =>
-              setCurrentAdminRole(prev => ({
-                ...prev,
-                unrestricted: !prev.unrestricted
-              }))
-            }
-            className="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded text-slate-700 font-medium transition-colors"
-          >
-            Switch Scope Mode
-          </button>
-        </div>
-      </div>
-
-      {/* OVERVIEW CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[
-          { title: 'States', count: metrics.State, icon: Building2, color: 'text-purple-600 bg-purple-50' },
-          { title: 'Districts', count: metrics.District, icon: Layers, color: 'text-blue-600 bg-blue-50' },
-          { title: 'Tehsils/Blocks', count: metrics['Tehsil/Block'], icon: MapPin, color: 'text-indigo-600 bg-indigo-50' },
-          { title: 'Villages', count: metrics.Village, icon: MapIcon, color: 'text-emerald-600 bg-emerald-50' },
-          { title: 'Total Projects', count: metrics.totalProjects, icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
-          { title: 'Active Officers', count: metrics.totalOfficers, icon: Users, color: 'text-rose-600 bg-rose-50' }
-        ].map((item, idx) => {
-          const Icon = item.icon;
-          return (
-            <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-              <div className={`p-2.5 rounded-lg ${item.color}`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500">{item.title}</p>
-                <p className="text-lg font-bold text-slate-800">{item.count}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* SEARCH AND FILTERS BAR */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-3 items-center justify-between">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search jurisdiction name, parent..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
-          />
-        </div>
-
-        {/* Filter Dropdowns */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Type Filter */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="All">All Types</option>
-            <option value="State">State</option>
-            <option value="District">District</option>
-            <option value="Tehsil/Block">Tehsil/Block</option>
-            <option value="Village">Village</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-
-          {/* Officer Filter */}
-          <select
-            value={filterOfficer}
-            onChange={(e) => setFilterOfficer(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="All">All Admins</option>
-            {OFFICERS_LIST.map(o => (
-              <option key={o.id} value={o.name}>{o.name}</option>
-            ))}
-          </select>
-
-          {/* Reset Filters Button */}
-          {(searchQuery || filterType !== 'All' || filterStatus !== 'All' || filterOfficer !== 'All') && (
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setFilterType('All');
-                setFilterStatus('All');
-                setFilterOfficer('All');
-              }}
-              className="text-xs text-rose-600 hover:underline flex items-center space-x-1 px-2 py-1"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Reset</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* MAIN CONTENT SPLIT: TABLE & GIS MAP */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* JURISDICTION HIERARCHY TABLE (2 Cols Wide) */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-800 flex items-center space-x-2">
-              <Layers className="w-4 h-4 text-emerald-600" />
-              <span>Jurisdiction Hierarchy & Coverage</span>
-            </h2>
-            <span className="text-xs text-slate-400">Showing {filteredJurisdictions.length} records</span>
-          </div>
-
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
-                  <th className="py-3 px-4">Jurisdiction Name</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Parent</th>
-                  <th className="py-3 px-4">Projects</th>
-                  <th className="py-3 px-4">Officers</th>
-                  <th className="py-3 px-4">Assigned Officer</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredJurisdictions.length > 0 ? (
-                  // Render root level first; tree recursively expands
-                  renderJurisdictionTree(null, 0)
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400 text-sm">
-                      No jurisdiction boundaries found matching your filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* GIS MAP PANEL (1 Col Wide) */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-800 flex items-center space-x-2">
-              <MapIcon className="w-4 h-4 text-emerald-600" />
-              <span>GIS Boundary Viewer</span>
-            </h2>
-            {selectedJurisdiction && (
-              <button
-                onClick={() => setSelectedJurisdiction(null)}
-                className="text-xs text-slate-400 hover:text-slate-600"
-              >
-                Clear Selection
-              </button>
-            )}
-          </div>
-
-          {/* Interactive GIS Canvas Mock */}
-          <div className="relative w-full h-80 bg-slate-900 rounded-lg overflow-hidden flex items-center justify-center border border-slate-800">
-            {/* Grid Map Vector Graphic Background */}
-            <div
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-              }}
-            />
-
-            {/* Simulating Shape Boundaries */}
-            <div className="relative z-10 text-center p-4">
-              {selectedJurisdiction ? (
-                <div className="bg-slate-800/90 backdrop-blur border border-emerald-500/30 p-4 rounded-xl shadow-xl max-w-xs text-left animate-in fade-in">
-                  <div className="flex items-center space-x-2 text-emerald-400 font-semibold text-sm mb-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{selectedJurisdiction.name}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-300">Type: {selectedJurisdiction.type}</p>
-                  <p className="text-[11px] text-slate-400 mt-2 font-mono bg-slate-950 p-2 rounded border border-slate-800 truncate">
-                    {selectedJurisdiction.boundaryGeoJSON}
-                  </p>
-                  <div className="mt-3 flex items-center justify-between text-xs text-slate-300 border-t border-slate-700 pt-2">
-                    <span>Projects: {selectedJurisdiction.projectsCount}</span>
-                    <span>Officers: {selectedJurisdiction.officersCount}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-slate-400 text-xs flex flex-col items-center space-y-2">
-                  <MapPin className="w-8 h-8 text-emerald-500/50 animate-bounce" />
-                  <span>Click any jurisdiction in table to view spatial GIS boundaries & project clusters.</span>
-                </div>
-              )}
-            </div>
-
-            {/* Simulated Overlay Control Legend */}
-            <div className="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur px-2.5 py-1.5 rounded border border-slate-800 text-[10px] text-slate-300 space-y-1">
-              <div className="flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Active Boundary</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span>Project Cluster</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-            <span className="font-semibold text-slate-700 block mb-0.5">Spatial Layer Info</span>
-            GeoJSON polygon data automatically syncs with state, district, and village revenue records for land governance.
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================== */}
-      {/* MODAL DIALOGS */}
-      {/* ========================================== */}
-
-      {/* VIEW MODAL */}
-      {viewModalData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="font-bold text-slate-800 flex items-center space-x-2">
-                <Eye className="w-4 h-4 text-emerald-600" />
-                <span>Jurisdiction Details: {viewModalData.name}</span>
-              </h3>
-              <button onClick={() => setViewModalData(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4 text-sm text-slate-700">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-slate-400 block">Jurisdiction Level</span>
-                  <span className="font-medium text-slate-800">{viewModalData.type}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-400 block">Parent Unit</span>
-                  <span className="font-medium text-slate-800">{viewModalData.parentName}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-400 block">Assigned Nodal Officer</span>
-                  <span className="font-medium text-slate-800">{viewModalData.adminName}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-400 block">Operational Status</span>
-                  <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${
-                    viewModalData.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                  }`}>
-                    {viewModalData.status}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-400 block">Active Land Projects</span>
-                  <span className="font-medium text-slate-800">{viewModalData.projectsCount}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-400 block">Field Officers Assigned</span>
-                  <span className="font-medium text-slate-800">{viewModalData.officersCount}</span>
-                </div>
-              </div>
-              <div>
-                <span className="text-xs text-slate-400 block mb-1">GIS Boundary Geometry</span>
-                <p className="bg-slate-100 p-2.5 rounded text-xs font-mono break-all text-slate-600">
-                  {viewModalData.boundaryGeoJSON}
-                </p>
-              </div>
-            </div>
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-              <button
-                onClick={() => setViewModalData(null)}
-                className="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-semibold hover:bg-slate-900 transition-colors"
-              >
-                Close View
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT MODAL */}
-      {editModalData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <form onSubmit={handleSaveEdit}>
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <h3 className="font-bold text-slate-800 flex items-center space-x-2">
-                  <Edit2 className="w-4 h-4 text-emerald-600" />
-                  <span>Edit Jurisdiction: {editModalData.name}</span>
-                </h3>
-                <button type="button" onClick={() => setEditModalData(null)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Jurisdiction Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    defaultValue={editModalData.name}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Boundary GeoJSON Data</label>
-                  <textarea
-                    name="boundaryGeoJSON"
-                    rows={4}
-                    defaultValue={editModalData.boundaryGeoJSON}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setEditModalData(null)}
-                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ASSIGN OFFICER MODAL */}
-      {assignModalData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <form onSubmit={handleSaveAssignment}>
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <h3 className="font-bold text-slate-800 flex items-center space-x-2">
-                  <UserPlus className="w-4 h-4 text-blue-600" />
-                  <span>Assign Nodal Admin Officer</span>
-                </h3>
-                <button type="button" onClick={() => setAssignModalData(null)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <p className="text-xs text-slate-500">
-                  Select a registered officer to grant administrative control over <strong>{assignModalData.name}</strong>.
-                </p>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Select Officer</label>
-                  <select
-                    name="officerId"
-                    defaultValue={assignModalData.adminId}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  >
-                    {OFFICERS_LIST.map(o => (
-                      <option key={o.id} value={o.id}>{o.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setAssignModalData(null)}
-                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
-                >
-                  Assign Officer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* CONFIRMATION DIALOG */}
-      {confirmModalData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-100 max-w-sm w-full p-6 text-center animate-in fade-in zoom-in-95 duration-150">
-            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-            <h3 className="font-bold text-slate-800 text-base">{confirmModalData.title}</h3>
-            <p className="text-xs text-slate-500 mt-2 mb-6">{confirmModalData.message}</p>
-            <div className="flex justify-center space-x-3">
-              <button
-                onClick={() => setConfirmModalData(null)}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmModalData.onConfirm}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-    </>
-  );
+	return <><Header title="Jurisdiction" /><main className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#eef7f5_100%)] px-4 py-6 text-slate-800 sm:px-6 lg:px-8"><div className="mx-auto max-w-7xl space-y-5">
+		<section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Administrative geography</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Jurisdiction management</h1><p className="mt-2 max-w-2xl text-sm text-slate-500">Manage the State to Village hierarchy, officer coverage, and geographic boundaries within your authorized scope.</p></div><button type="button" onClick={() => setEditor({ mode: 'create', item: emptyJurisdiction })} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"><Plus className="h-4 w-4" />Add jurisdiction</button></div></section>
+		{error ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{error}</div> : null}{notice ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</div> : null}
+		<section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{JURISDICTION_TYPES.map((type) => <div key={type} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{type}</p><p className="mt-2 text-2xl font-bold text-slate-950">{visibleItems.filter((item) => item.type === type).length}</p></div>)}</section>
+		<section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 lg:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search state, district, tehsil, or village" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-emerald-400" /></label><select value={filters.type} onChange={(event) => setFilters({ ...filters, type: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm"><option value="All">All levels</option>{JURISDICTION_TYPES.map((type) => <option key={type}>{type}</option>)}</select><select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm"><option value="All">All statuses</option><option>Active</option><option>Inactive</option><option>Pending</option></select></div></section>
+		<div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]"><section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold text-slate-900">Administrative hierarchy</h2><p className="mt-1 text-xs text-slate-500">{globalAccess ? 'Super Admin scope: all jurisdictions' : `Scoped to ${profile?.district || profile?.state || profile?.jurisdiction || 'authorized coverage'}`}</p></div><Layers3 className="h-5 w-5 text-emerald-600" /></div>{roots.length ? roots.map((item) => renderTree(item)) : <div className="p-14 text-center text-sm text-slate-500">No jurisdictions match the current scope or filters.</div>}</section><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2"><Map className="h-5 w-5 text-emerald-600" /><div><h2 className="font-bold text-slate-900">GIS coverage</h2><p className="text-xs text-slate-500">Administrative boundary readiness</p></div></div><div className="mt-5 rounded-2xl border border-emerald-100 bg-[linear-gradient(135deg,#ecfdf5,#eff6ff)] p-5"><div className="relative h-44 overflow-hidden rounded-xl border border-white/80 bg-white/60"><div className="absolute inset-8 rounded-[45%_55%_48%_52%] border-2 border-emerald-300/70 bg-emerald-100/40" /><div className="absolute left-[28%] top-[32%] h-3 w-3 rounded-full bg-emerald-600 shadow-[0_0_0_7px_rgba(16,185,129,0.15)]" /><div className="absolute left-[62%] top-[58%] h-3 w-3 rounded-full bg-sky-600 shadow-[0_0_0_7px_rgba(14,165,233,0.15)]" /><div className="absolute left-[45%] top-[68%] h-px w-24 rotate-[-25deg] bg-emerald-500/70" /></div><div className="mt-4 grid grid-cols-2 gap-3 text-center"><div><p className="text-2xl font-bold text-slate-900">{visibleItems.filter((item) => item.boundary).length}</p><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Boundaries</p></div><div><p className="text-2xl font-bold text-slate-900">{visibleItems.reduce((sum, item) => sum + (projectCounts[item.id] || 0), 0)}</p><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Projects covered</p></div></div></div></section></div>
+	</div></main>
+	{editor ? <Modal title={editor.mode === 'edit' ? 'Edit jurisdiction' : 'Add jurisdiction'} onClose={() => setEditor(null)}><form onSubmit={saveEditor} className="space-y-4 p-5"><div className="grid gap-4 sm:grid-cols-2"><Field label="Name" required value={editor.item.name} onChange={(value) => setEditor({ ...editor, item: { ...editor.item, name: value } })} /><SelectField label="Level" value={editor.item.type} options={JURISDICTION_TYPES} onChange={(value) => setEditor({ ...editor, item: { ...editor.item, type: value } })} /><SelectField label="Parent jurisdiction" value={editor.item.parentId || ''} options={['', ...jurisdictions.filter((item) => item.type !== 'Village').map((item) => item.id)]} onChange={(value) => setEditor({ ...editor, item: { ...editor.item, parentId: value } })} /><SelectField label="Status" value={editor.item.status} options={['Active', 'Inactive', 'Pending']} onChange={(value) => setEditor({ ...editor, item: { ...editor.item, status: value } })} /><Field label="Coverage description" value={editor.item.coverage} onChange={(value) => setEditor({ ...editor, item: { ...editor.item, coverage: value } })} placeholder="e.g. South district administrative coverage" /><Field label="GIS boundary" value={editor.item.boundary} onChange={(value) => setEditor({ ...editor, item: { ...editor.item, boundary: value } })} placeholder="Boundary reference or GeoJSON ID" /></div><div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" onClick={() => setEditor(null)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button><button type="submit" className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Save jurisdiction</button></div></form></Modal> : null}
+	{assigning ? <Modal title={`Assign officers · ${assigning.item.name}`} onClose={() => setAssigning(null)}><form onSubmit={saveAssignments} className="p-5"><p className="mb-4 text-sm text-slate-500">Select active officers who should inherit this jurisdiction’s state and district coverage.</p><div className="max-h-72 space-y-2 overflow-y-auto">{availableUsers.length ? availableUsers.map((user) => <label key={user.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50"><input type="checkbox" name="userId" value={user.id} defaultChecked={assigning.item.adminIds?.includes(user.id)} className="h-4 w-4 accent-emerald-600" /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{user.name}</span><span className="text-xs text-slate-500">{user.role} · {user.district || 'Unassigned'}</span></span></label>) : <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No active officers are available in this scope.</p>}</div><div className="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" onClick={() => setAssigning(null)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button><button type="submit" className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">Save assignments</button></div></form></Modal> : null}
+	{detail ? <Modal title="Jurisdiction details" onClose={() => setDetail(null)} wide><div className="space-y-5 p-5"><div className="flex items-start justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">Coverage profile</p><h3 className="mt-1 text-xl font-bold text-slate-950">{detail.name}</h3></div><div className="flex flex-wrap gap-2"><span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-emerald-700">{detail.type}</span><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusTone[detail.status]}`}>{detail.status}</span></div></div><div className="grid gap-3 sm:grid-cols-2"><DetailCard icon={Layers3} label="Hierarchy">{[detail.state, detail.district, detail.tehsil, detail.village].filter(Boolean).join(' · ')}</DetailCard><DetailCard icon={Users} label="Active officers">{officerCounts[detail.id] || 0}</DetailCard><DetailCard icon={Building2} label="Projects covered">{projectCounts[detail.id] || 0}</DetailCard><DetailCard icon={MapPin} label="Parent unit">{jurisdictions.find((item) => item.id === detail.parentId)?.name || 'Top-level unit'}</DetailCard></div><div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">GIS coverage</p><p className="mt-1 text-sm font-semibold text-slate-800">{detail.coverage || 'Coverage description not recorded.'}</p><p className="mt-2 break-words font-mono text-xs text-slate-500">{detail.boundary || 'No boundary reference recorded.'}</p></div><div className="flex justify-end"><button type="button" onClick={() => setDetail(null)} className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Close</button></div></div></Modal> : null}
+	{confirm ? <Modal title={confirm.title} onClose={() => setConfirm(null)}><div className="p-5"><p className="text-sm text-slate-600">{confirm.message}</p><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setConfirm(null)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button><button type="button" onClick={confirm.onConfirm} className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Confirm</button></div></div></Modal> : null}
+	</>
 }

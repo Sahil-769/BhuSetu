@@ -25,6 +25,7 @@ const Sidebar = () => {
   const currentRoleData =
     SidebarConfig.roles[currentRole];
   const tabs = currentRoleData.tabs;
+  const navGroups = currentRoleData.groups || [{ label: "", tabs }];
   const logo = currentRoleData.profileImg;
 
   // Close sidebar when clicking outside (mobile only)
@@ -126,30 +127,39 @@ const Sidebar = () => {
             </button>
 
             {/* Navigation Links */}
-            <nav className="mt-1">
-              <ul className="flex flex-col">
-                {tabs.map((tab, index) => (
-                  <li
-                    key={index}
-                    className={`nav-link ${isActive(tab.url) ? "active" : ""} ${
-                      isCollapsed ? "justify-center text-center" : ""
-                    }`}
-                    title={isCollapsed ? tab.name : ""}
-                  >
-                    
-                    <Link
-                      className={`w-full h-full flex gap-2.5 text-[14px] capitalize ${
-                        isCollapsed
-                          ? "justify-center py-[0.7rem] pl-[0.37rem] pr-2 text-lg"
-                          : "py-[0.6rem] pl-8 pr-3"
-                      }`}
-                      href={tab.url}
-                    ><span>{tab.icon}</span>
-                      {!isCollapsed && tab.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            <nav className="mt-1 space-y-4" aria-label="Primary navigation">
+              {navGroups.map((group) => (
+                <section key={group.label || "navigation"}>
+                  {!isCollapsed && group.label ? (
+                    <h2 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {group.label}
+                    </h2>
+                  ) : null}
+                  <ul className="flex flex-col">
+                    {group.tabs.map((tab) => (
+                      <li
+                        key={tab.url}
+                        className={`nav-link ${isActive(tab.url) ? "active bg-blue-600 text-white rounded-xl" : ""} ${
+                          isCollapsed ? "justify-center text-center" : ""
+                        }`}
+                        title={isCollapsed ? tab.name : ""}
+                      >
+                        <Link
+                          className={`w-full h-full flex gap-2.5 text-[14px] capitalize ${
+                            isCollapsed
+                              ? "justify-center py-[0.7rem] pl-[0.37rem] pr-2 text-lg"
+                              : "py-[0.6rem] pl-8 pr-3"
+                          }`}
+                          href={tab.url}
+                        >
+                          <span>{tab.icon}</span>
+                          {!isCollapsed && tab.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
             </nav>
           </div>
         </aside>

@@ -1,712 +1,135 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useState } from 'react'
-import {Header} from '../../../component/layout/index'
+import { useEffect, useMemo, useState } from "react";
 import {
-  AlertCircle,
-  CheckCircle2,
-  Eye,
-  KeyRound,
-  MapPinned,
-  MoreVertical,
-  Search,
-  ShieldCheck,
-  Users,
-  X
-} from 'lucide-react'
+    Activity, AlertCircle, BadgeCheck, BriefcaseBusiness, Building2, CheckCircle2,
+    Eye, KeyRound, Mail, MapPin, MapPinned, MoreVertical, Phone, Plus, Search,
+    ShieldCheck, UserRound, Users, X,
+} from "lucide-react";
+import { Header } from "../../../component/layout/index";
+import { PROJECTS } from "../../project-officer/my-project/projects-data";
+import {
+    ROLE_OPTIONS, STATUS_OPTIONS, canManageUser, getAdminProfile, normalizeUser,
+    readOrSeedUsers, recordAdminActivity, saveUsers,
+} from "../../../lib/adminManagementStore";
 
-const roleStyles = {
-  'Project Officer': 'bg-sky-50 text-sky-700 ring-sky-200',
-  'Land Acquisition Officer': 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  'Nodal Officer': 'bg-violet-50 text-violet-700 ring-violet-200',
-  'System Admin': 'bg-amber-50 text-amber-700 ring-amber-200'
+const emptyUser = { id: "", name: "", employeeId: "", email: "", phone: "", role: "Project Officer", status: "Active", department: "", state: "Delhi", district: "", jurisdiction: "District Level", assignedProjects: [], permissions: [] };
+const roleTone = { "Project Officer": "bg-sky-50 text-sky-700", "Land Acquisition Officer": "bg-emerald-50 text-emerald-700", "Nodal Officer": "bg-violet-50 text-violet-700", "System Admin": "bg-amber-50 text-amber-700" };
+const statusTone = { Active: "bg-emerald-50 text-emerald-700", Inactive: "bg-slate-100 text-slate-600", Pending: "bg-amber-50 text-amber-700", Suspended: "bg-rose-50 text-rose-700" };
+
+function Modal({ title, onClose, children, wide = false }) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"><div className={`max-h-[92vh] w-full overflow-y-auto rounded-3xl bg-white shadow-2xl ${wide ? "max-w-3xl" : "max-w-lg"}`}><div className="flex items-center justify-between border-b border-slate-100 p-5"><h2 className="text-lg font-bold text-slate-900">{title}</h2><button type="button" onClick={onClose} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div>{children}</div></div>;
 }
 
-const statusStyles = {
-  Active: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  Inactive: 'bg-slate-200 text-slate-700 ring-slate-300',
-  Pending: 'bg-amber-50 text-amber-700 ring-amber-200',
-  Suspended: 'bg-rose-50 text-rose-700 ring-rose-200'
+function UserDetailCard({ icon: Icon, label, children, className = "" }) {
+    return <div className={`min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-3 ${className}`}><div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500"><Icon className="h-3.5 w-3.5 text-sky-600" />{label}</div><div className="mt-1.5 min-w-0 text-xs font-semibold text-slate-800">{children}</div></div>;
 }
 
-const roleOptions = ['Project Officer', 'Land Acquisition Officer', 'Nodal Officer', 'System Admin']
-const jurisdictionOptions = ['District Level', 'Tehsil Level', 'State Level', 'All States']
-const statusOptions = ['Active', 'Inactive', 'Pending', 'Suspended']
+function UserDetailsModal({ user, onClose }) {
+    const [showAllActivity, setShowAllActivity] = useState(false);
+    const activity = user.recentActivity || [];
+    const visibleActivity = showAllActivity ? activity : activity.slice(0, 3);
 
-const normalizeUser = (user) => {
-  const assignedProjects = Array.isArray(user.assignedProjects)
-    ? user.assignedProjects
-    : typeof user.assignedProjects === 'number'
-      ? Array.from({ length: Math.max(user.assignedProjects, 1) }, (_, index) => ({
-          id: `PROJ-${String(index + 1).padStart(3, '0')}`,
-          title: `Project ${index + 1}`
-        }))
-      : []
-
-  return {
-    ...user,
-    id: user.id || user.employeeId,
-    role: user.role || 'Project Officer',
-    status: user.status || 'Active',
-    jurisdiction: user.jurisdiction || 'District Level',
-    department: user.department || 'Project Management',
-    phone: user.phone || '+91 00000 00000',
-    district: user.district || 'Lucknow',
-    email: user.email || `${user.name?.toLowerCase().replace(/\s+/g, '.')}@bhoomi.gov.in`,
-    assignedProjects,
-    permissions: Array.isArray(user.permissions) ? user.permissions : [],
-    recentActivity: Array.isArray(user.recentActivity) ? user.recentActivity : [],
-    account: user.account || {
-      createdAt: 'N/A',
-      lastPasswordReset: 'N/A',
-      securityLevel: 'Standard'
-    }
-  }
-}
-
-const getStoredUsers = () => {
-  if (typeof window === 'undefined') return []
-  try {
-    const saved = window.localStorage.getItem('bhoomiUsersData')
-    return saved ? JSON.parse(saved) : []
-  } catch {
-    return []
-  }
-}
-
-const saveStoredUsers = (users) => {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem('bhoomiUsersData', JSON.stringify(users))
-  }
-}
-
-const getStoredJurisdiction = () => {
-  if (typeof window === 'undefined') return 'All States'
-
-  const storedProfile = window.localStorage.getItem('adminProfile') || window.localStorage.getItem('currentProfile') || window.localStorage.getItem('selectedProfile')
-  if (!storedProfile) return 'All States'
-
-  try {
-    const parsed = JSON.parse(storedProfile)
-    return parsed?.jurisdiction || 'All States'
-  } catch {
-    return 'All States'
-  }
-}
-
-const shortRole = (role) => {
-  if (!role) return 'PO'
-  const mapping = {
-    'Project Officer': 'PO',
-    'Land Acquisition Officer': 'LAO',
-    'Nodal Officer': 'NO',
-    'System Admin': 'SA'
-  }
-  return mapping[role] || role.slice(0, 2).toUpperCase()
-}
-
-const shortDepartment = (department) => {
-  if (!department) return 'PM'
-  const words = department.split(' ')
-  return words.length > 1 ? words.map((word) => word[0]).slice(0, 2).join('').toUpperCase() : department.slice(0, 2).toUpperCase()
-}
-
-const projectSummary = (projects, max = 2) => {
-  if (!Array.isArray(projects) || projects.length === 0) return 'None'
-
-  const items = projects.slice(0, max).map((project) => project?.title || project || 'Project')
-  const extra = projects.length - items.length
-
-  return extra > 0 ? `${items.join(', ')} +${extra}` : items.join(', ')
-}
-
-const UsersPage = () => {
-  const [users, setUsers] = useState([])
-  const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState('All Roles')
-  const [districtFilter, setDistrictFilter] = useState('All Districts')
-  const [statusFilter, setStatusFilter] = useState('All Status')
-  const [openMenuId, setOpenMenuId] = useState(null)
-  const [selectedUser, setSelectedUser] = useState(null)
-  const [editorUser, setEditorUser] = useState(null)
-  const [formError, setFormError] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true)
-        setError('')
-
-        const savedUsers = getStoredUsers()
-        if (savedUsers.length > 0) {
-          setUsers(savedUsers.map(normalizeUser))
-          setLoading(false)
-          return
-        }
-
-        const response = await fetch('/data/users.json')
-        if (!response.ok) throw new Error('Unable to load user records.')
-
-        const data = await response.json()
-        const jurisdiction = getStoredJurisdiction()
-        const scopedUsers = jurisdiction === 'All States'
-          ? data
-          : data.filter((user) => user.jurisdiction === jurisdiction || user.district === jurisdiction)
-
-        const normalized = scopedUsers.map(normalizeUser)
-        setUsers(normalized)
-        saveStoredUsers(normalized)
-      } catch (loadError) {
-        setError(loadError.message || 'Something went wrong while loading users.')
-        setUsers([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUsers()
-  }, [])
-
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const haystack = [user.name, user.employeeId, user.role, user.district, user.department].join(' ').toLowerCase()
-      const matchesSearch = haystack.includes(search.toLowerCase())
-      const matchesRole = roleFilter === 'All Roles' || user.role === roleFilter
-      const matchesDistrict = districtFilter === 'All Districts' || user.district === districtFilter
-      const matchesStatus = statusFilter === 'All Status' || user.status === statusFilter
-      return matchesSearch && matchesRole && matchesDistrict && matchesStatus
-    })
-  }, [users, search, roleFilter, districtFilter, statusFilter])
-
-  const totalUsers = users.length
-  const activeUsers = users.filter((user) => user.status === 'Active').length
-  const pendingUsers = users.filter((user) => user.status === 'Pending').length
-  const jurisdictionValue = getStoredJurisdiction()
-
-  const summaryCards = [
-    { label: 'Total Users', value: totalUsers, icon: Users, tone: 'bg-sky-50 text-sky-700' },
-    { label: 'Active', value: activeUsers, icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700' },
-    { label: 'Pending', value: pendingUsers, icon: ShieldCheck, tone: 'bg-amber-50 text-amber-700' },
-    { label: 'Jurisdiction', value: jurisdictionValue, icon: MapPinned, tone: 'bg-violet-50 text-violet-700' }
-  ]
-
-  const saveUsers = (nextUsers) => {
-    const normalized = nextUsers.map(normalizeUser)
-    setUsers(normalized)
-    saveStoredUsers(normalized)
-  }
-
-  const handleToggleStatus = (userId) => {
-    const currentUser = users.find((user) => user.id === userId)
-    if (!currentUser) return
-
-    const nextStatus = currentUser.status === 'Active' ? 'Inactive' : 'Active'
-    const updated = users.map((user) => (user.id === userId ? { ...user, status: nextStatus } : user))
-    saveUsers(updated)
-    setOpenMenuId(null)
-  }
-
-  const handleResetPassword = (userId) => {
-    const user = users.find((entry) => entry.id === userId)
-    if (!user) return
-
-    const confirmed = window.confirm(`Reset the password for ${user.name}?`)
-    if (!confirmed) return
-
-    const updated = users.map((entry) => {
-      if (entry.id !== userId) return entry
-      return {
-        ...entry,
-        passwordResetAt: new Date().toISOString(),
-        securityNote: 'Password reset requested by admin.'
-      }
-    })
-
-    saveUsers(updated)
-    setOpenMenuId(null)
-  }
-
-  const handleAssignRole = (userId) => {
-    const user = users.find((entry) => entry.id === userId)
-    if (!user) return
-
-    const nextRole = window.prompt('Choose a role', user.role)
-    if (!nextRole) return
-
-    const cleanRole = nextRole.trim()
-    if (!roleOptions.includes(cleanRole)) {
-      setError('Please choose a valid role from the available options.')
-      return
-    }
-
-    const updated = users.map((entry) => (entry.id === userId ? { ...entry, role: cleanRole } : entry))
-    saveUsers(updated)
-    setOpenMenuId(null)
-    setError('')
-  }
-
-  const handleAssignJurisdiction = (userId) => {
-    const user = users.find((entry) => entry.id === userId)
-    if (!user) return
-
-    const nextJurisdiction = window.prompt('Update jurisdiction', user.jurisdiction)
-    if (!nextJurisdiction) return
-
-    const cleanJurisdiction = nextJurisdiction.trim()
-    if (!jurisdictionOptions.includes(cleanJurisdiction)) {
-      setError('Please choose a valid jurisdiction level.')
-      return
-    }
-
-    const updated = users.map((entry) => (entry.id === userId ? { ...entry, jurisdiction: cleanJurisdiction } : entry))
-    saveUsers(updated)
-    setOpenMenuId(null)
-    setError('')
-  }
-
-  const handleAssignProject = (userId) => {
-    const user = users.find((entry) => entry.id === userId)
-    if (!user) return
-
-    const value = window.prompt('Add project assignment (format: PROJECT-204 - Metro Corridor)', 'PROJECT-204 - Metro Corridor')
-    if (!value) return
-
-    const trimmed = value.trim()
-    if (!trimmed.includes('-')) {
-      setError('Project format must include a title, for example: PROJECT-204 - Metro Corridor.')
-      return
-    }
-
-    const [projectId, ...titleParts] = trimmed.split('-')
-    const projectTitle = titleParts.join('-').trim() || 'Assigned Project'
-    const project = {
-      id: projectId.trim(),
-      title: projectTitle
-    }
-
-    const updated = users.map((entry) => {
-      if (entry.id !== userId) return entry
-      return {
-        ...entry,
-        assignedProjects: [...(Array.isArray(entry.assignedProjects) ? entry.assignedProjects : []), project]
-      }
-    })
-
-    saveUsers(updated)
-    setOpenMenuId(null)
-    setError('')
-  }
-
-  const handleSaveEdit = () => {
-    if (!editorUser?.name?.trim()) {
-      setFormError('Name is required.')
-      return
-    }
-
-    if (!editorUser.role || !roleOptions.includes(editorUser.role)) {
-      setFormError('Please choose a valid role.')
-      return
-    }
-
-    if (!editorUser.department?.trim()) {
-      setFormError('Department is required.')
-      return
-    }
-
-    if (!editorUser.jurisdiction || !jurisdictionOptions.includes(editorUser.jurisdiction)) {
-      setFormError('Please choose a valid jurisdiction.')
-      return
-    }
-
-    const updated = users.map((user) => (user.id === editorUser.id ? { ...user, ...editorUser } : user))
-    saveUsers(updated)
-    setEditorUser(null)
-    setFormError('')
-  }
-
-  return (
-    <>
-    <Header title="Users"/>
-    <div className="min-h-screen  px-4 py-6 text-slate-800 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-[28px] border border-slate-200 bg-white/90 px-5 py-4 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-linear-to-br from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-200">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Admin Panel</p>
-                <h1 className="mt-1 text-2xl font-bold text-slate-900">Users</h1>
-              </div>
+    return <div role="dialog" aria-modal="true" aria-labelledby="user-details-title" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-[2px] sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+        <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_24px_80px_-24px_rgba(15,23,42,0.45)] animate-[admin-modal-in_220ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:animate-none sm:max-h-[calc(100dvh-15rem)]">
+            <header className="admin-modal-header flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 bg-linear-to-r from-sky-50 via-white to-white px-4 py-3 sm:px-5">
+                <div className="flex min-w-0 items-center gap-2.5"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white shadow-md shadow-sky-200"><UserRound className="h-4 w-4" /></div><div className="min-w-0"><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-sky-700">Account profile</p><h2 id="user-details-title" className="truncate text-lg font-bold tracking-tight text-slate-950">{user.name}</h2><p className="truncate text-[11px] text-slate-500">Identity, access, and assignment overview</p></div></div>
+                <button type="button" onClick={onClose} aria-label="Close user details" className="rounded-xl p-2 text-slate-400 transition duration-200 hover:scale-105 hover:bg-white hover:text-slate-700 hover:shadow-sm focus:outline-none focus:ring-4 focus:ring-sky-100 active:scale-95"><X className="h-5 w-5" /></button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-4">
+                <div className="space-y-3">
+                    <section className="admin-modal-section flex flex-col gap-2 rounded-xl border border-sky-100 bg-sky-50/50 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="text-xs font-bold text-slate-900">{user.employeeId || "Employee ID unavailable"}</p><p className="mt-0.5 truncate text-[11px] text-slate-600">{user.email || "Email unavailable"}</p></div><div className="flex flex-wrap gap-1.5"><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${roleTone[user.role] || "bg-slate-100 text-slate-600"}`}>{user.role || "Unassigned role"}</span><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${statusTone[user.status] || "bg-slate-100 text-slate-600"}`}>{user.status || "Unknown status"}</span></div></section>
+                    <div className="grid gap-3 lg:grid-cols-2">
+                        <section className="admin-modal-section"><div className="mb-1.5 flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-sky-600" /><h3 className="text-xs font-bold text-slate-900">Profile & access</h3></div><div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><UserDetailCard icon={Mail} label="Email"><span className="block truncate" title={user.email}>{user.email || "Not recorded"}</span></UserDetailCard><UserDetailCard icon={Phone} label="Phone"><span className="block truncate">{user.phone || "Not recorded"}</span></UserDetailCard><UserDetailCard icon={Building2} label="Department"><span className="block truncate">{user.department || "Not assigned"}</span></UserDetailCard><UserDetailCard icon={Activity} label="Last login">{user.lastLogin || "Not recorded"}</UserDetailCard></div></section>
+                        <section className="admin-modal-section"><div className="mb-1.5 flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-sky-600" /><h3 className="text-xs font-bold text-slate-900">Account security</h3></div><div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><UserDetailCard icon={UserRound} label="Username"><span className="block truncate" title={user.username}>{user.username || user.email || "Not recorded"}</span></UserDetailCard><UserDetailCard icon={KeyRound} label="Password"><span className="font-mono tracking-widest">••••••••</span><span className="ml-2 text-[10px] font-normal text-slate-500">{user.passwordResetAt ? "Reset requested" : "Protected"}</span></UserDetailCard></div></section>
+                        <section className="admin-modal-section lg:col-span-2"><div className="mb-1.5 flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-sky-600" /><h3 className="text-xs font-bold text-slate-900">Jurisdiction</h3></div><div className="grid gap-1.5 sm:grid-cols-2"><UserDetailCard icon={MapPin} label="Coverage area"><span className="block truncate">{[user.state, user.district || "Unassigned"].filter(Boolean).join(" · ") || "Not assigned"}</span></UserDetailCard><UserDetailCard icon={ShieldCheck} label="Jurisdiction level"><span className="inline-flex rounded-full bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700">{user.jurisdiction || "Not assigned"}</span></UserDetailCard></div></section>
+                    </div>
+                    <section className="admin-modal-section"><div className="mb-1.5 flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-sky-600" /><h3 className="text-xs font-bold text-slate-900">Permissions</h3></div><div className="rounded-xl border border-slate-100 bg-white p-2.5"><div className="flex flex-wrap gap-1.5">{(user.permissions || []).length ? user.permissions.map((permission) => <span key={permission} className="max-w-full truncate rounded-full bg-sky-50 px-2 py-1 text-[10px] font-semibold text-sky-700" title={permission}>{permission}</span>) : <p className="text-xs text-slate-500">No permissions recorded.</p>}</div></div></section>
+                    <section className="admin-modal-section"><div className="mb-1.5 flex items-center gap-1.5"><BriefcaseBusiness className="h-3.5 w-3.5 text-sky-600" /><h3 className="text-xs font-bold text-slate-900">Assigned projects <span className="ml-1 text-[10px] font-medium text-slate-400">({(user.assignedProjects || []).length})</span></h3></div><div className="grid gap-1.5 sm:grid-cols-2">{(user.assignedProjects || []).length ? user.assignedProjects.map((project) => <div key={project.id} className="admin-detail-card min-w-0 rounded-xl border border-slate-200 bg-white p-2.5 transition hover:border-sky-200 hover:shadow-sm"><span className="font-mono text-[10px] font-semibold text-slate-400">{project.id}</span><p className="mt-0.5 truncate text-xs font-bold text-slate-800" title={project.title}>{project.title || project.id}</p></div>) : <div className="rounded-xl border border-dashed border-slate-200 p-2.5 text-xs text-slate-500">No projects assigned.</div>}</div></section>
+                    <section className="admin-modal-section"><div className="mb-1.5 flex items-center gap-1.5"><Activity className="h-3.5 w-3.5 text-sky-600" /><h3 className="text-xs font-bold text-slate-900">Recent activity</h3></div><div className="space-y-1">{visibleActivity.length ? visibleActivity.map((item, index) => <div key={`${item.title}-${index}`} className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5"><p className="truncate text-xs font-semibold text-slate-800" title={item.title}>{item.title}</p><p className="mt-0.5 wrap-break-word text-[11px] text-slate-500">{item.detail} {item.time ? `· ${item.time}` : ""}</p></div>) : <div className="rounded-xl border border-dashed border-slate-200 p-2.5 text-xs text-slate-500">No recent activity recorded.</div>}</div>{activity.length > 3 ? <button type="button" onClick={() => setShowAllActivity(!showAllActivity)} className="mt-1.5 text-[11px] font-bold text-sky-700 transition hover:text-sky-900 focus:outline-none focus:underline">{showAllActivity ? "Show less activity" : `Show all ${activity.length} activities`}</button> : null}</section>
+                </div>
             </div>
-          </div>
+            <footer className="admin-modal-footer flex shrink-0 items-center justify-between border-t border-slate-100 bg-slate-50/80 px-4 py-2.5 sm:px-5"><p className="hidden text-[11px] text-slate-500 sm:block">Read-only account overview</p><button type="button" onClick={onClose} className="ml-auto rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200">Close details</button></footer>
         </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map(({ label, value, icon: Icon, tone }) => (
-            <div key={label} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_18px_35px_-32px_rgba(15,23,42,0.4)] transition hover:-translate-y-0.5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
-                </div>
-                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.35)]">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 shadow-inner shadow-slate-100">
-              <Search className="h-4 w-4 text-slate-500" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by name, employee ID, role, district"
-                className="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
-              />
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-3 xl:w-[32rem]">
-              <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100">
-                <option>All Roles</option>
-                {roleOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-
-              <select value={districtFilter} onChange={(event) => setDistrictFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100">
-                <option>All Districts</option>
-                {['Lucknow', 'Kanpur', 'Agra', 'Varanasi', 'Patna', 'Bhopal', 'Jaipur', 'Delhi'].map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100">
-                <option>All Status</option>
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            <AlertCircle className="h-4 w-4" />
-            {error}
-          </div>
-        )}
-
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_35px_-30px_rgba(15,23,42,0.42)]">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  {['Name', 'ID', 'Role', 'Department', 'Jurisdiction', 'Projects', 'Status', 'Last Login', 'Actions'].map((heading) => (
-                    <th key={heading} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{heading}</th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {loading ? (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-500">Loading user records…</td>
-                  </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-500">No users found for the selected filters.</td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr key={user.id} className="transition hover:bg-sky-50/60">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-sky-100 via-indigo-100 to-sky-200 text-xs font-bold text-sky-700">
-                            {user.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-800">{user.name}</p>
-                            <p className="text-xs text-slate-500">{user.email}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3 text-sm font-medium text-slate-700">{user.employeeId}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${roleStyles[user.role] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
-                          {shortRole(user.role)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{shortDepartment(user.department)}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{user.jurisdiction}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-800">{projectSummary(user.assignedProjects, 2)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${statusStyles[user.status] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{user.lastLogin}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setSelectedUser(user)} className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-100">
-                            <Eye className="h-3.5 w-3.5" />
-                            View
-                          </button>
-
-                          <div className="relative">
-                            <button onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-100">
-                              <MoreVertical className="h-4 w-4" />
-                            </button>
-
-                            {openMenuId === user.id && (
-                              <div className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200">
-                                <button onClick={() => { setSelectedUser(user); setOpenMenuId(null) }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">View</button>
-                                <button onClick={() => { setEditorUser({ ...user }); setOpenMenuId(null); setFormError('') }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">Edit</button>
-                                <button onClick={() => handleToggleStatus(user.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">{user.status === 'Active' ? 'Deactivate' : 'Activate'}</button>
-                                <button onClick={() => handleResetPassword(user.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">Reset Password</button>
-                                <button onClick={() => handleAssignRole(user.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">Assign Role</button>
-                                <button onClick={() => handleAssignJurisdiction(user.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">Assign Jurisdiction</button>
-                                <button onClick={() => handleAssignProject(user.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">Assign Project</button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[28px] border border-slate-200 bg-white shadow-[0_28px_60px_-30px_rgba(15,23,42,0.7)]">
-            <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur-md">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">User profile</p>
-                <h2 className="text-xl font-bold text-slate-900">{selectedUser.name}</h2>
-              </div>
-              <button onClick={() => setSelectedUser(null)} className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-5 p-5">
-              <div className="rounded-[26px] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-indigo-50 p-4 shadow-inner shadow-sky-100">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-sky-500 to-indigo-600 text-xl font-bold text-white shadow-lg shadow-sky-200">
-                      {selectedUser.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xl font-bold text-slate-900">{selectedUser.name}</h3>
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${roleStyles[selectedUser.role] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>{selectedUser.role}</span>
-                      </div>
-                      <p className="mt-1 text-sm text-slate-500">{selectedUser.employeeId} • {selectedUser.department}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${statusStyles[selectedUser.status] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>{selectedUser.status}</span>
-                    <button onClick={() => { setEditorUser({ ...selectedUser }); setSelectedUser(null); setFormError('') }} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Edit</button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">District</p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">{selectedUser.district}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Jurisdiction</p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">{selectedUser.jurisdiction}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Assigned Projects</p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">{projectSummary(selectedUser.assignedProjects, 3)}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Last Login</p>
-                  <p className="mt-2 text-lg font-bold text-slate-900">{selectedUser.lastLogin}</p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h4 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-500">Personal details</h4>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Email</p>
-                      <p className="mt-1 text-sm font-medium text-slate-800">{selectedUser.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Phone</p>
-                      <p className="mt-1 text-sm font-medium text-slate-800">{selectedUser.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Department</p>
-                      <p className="mt-1 text-sm font-medium text-slate-800">{selectedUser.department}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Manager</p>
-                      <p className="mt-1 text-sm font-medium text-slate-800">{selectedUser.manager || 'Not assigned'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Gender</p>
-                      <p className="mt-1 text-sm font-medium text-slate-800">{selectedUser.gender || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Date of Birth</p>
-                      <p className="mt-1 text-sm font-medium text-slate-800">{selectedUser.dateOfBirth || 'Not provided'}</p>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Address</p>
-                      <p className="mt-1 text-sm font-medium text-slate-800">{selectedUser.address || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h4 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-500">Account</h4>
-                  <div className="mt-4 space-y-3 text-sm text-slate-700">
-                    <div className="rounded-xl bg-slate-50 p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Created</p>
-                      <p className="mt-1 font-semibold text-slate-800">{selectedUser.account?.createdAt || 'N/A'}</p>
-                    </div>
-                    <div className="rounded-xl bg-slate-50 p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Last Password Reset</p>
-                      <p className="mt-1 font-semibold text-slate-800">{selectedUser.account?.lastPasswordReset || 'N/A'}</p>
-                    </div>
-                    <div className="rounded-xl bg-slate-50 p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Security Level</p>
-                      <p className="mt-1 font-semibold text-slate-800">{selectedUser.account?.securityLevel || 'Standard'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h4 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-500">Assigned permissions</h4>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {(selectedUser.permissions?.length ? selectedUser.permissions : ['View Records', 'Update Records']).map((permission) => (
-                      <span key={permission} className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700">{permission}</span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h4 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-500">Recent Activity</h4>
-                  <div className="mt-4 space-y-3">
-                    {(selectedUser.recentActivity?.length ? selectedUser.recentActivity : [{ title: 'Project review', detail: 'Reviewed project updates and assigned tasks.', time: 'Today' }]).map((item) => (
-                      <div key={`${item.title}-${item.time}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-slate-800">{item.title}</p>
-                          <span className="text-[11px] font-medium text-slate-500">{item.time}</span>
-                        </div>
-                        <p className="mt-1 text-sm text-slate-600">{item.detail}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button onClick={() => setSelectedUser(null)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {editorUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_28px_60px_-30px_rgba(15,23,42,0.7)]">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Edit User</p>
-                <h2 className="mt-1 text-xl font-bold text-slate-900">{editorUser.name}</h2>
-              </div>
-              <button onClick={() => { setEditorUser(null); setFormError('') }} className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-100">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {formError && (
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                <AlertCircle className="h-4 w-4" />
-                {formError}
-              </div>
-            )}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-1 text-sm text-slate-600">
-                <span>Full Name</span>
-                <input value={editorUser.name} onChange={(event) => setEditorUser((current) => ({ ...current, name: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-sky-400" />
-              </label>
-
-              <label className="space-y-1 text-sm text-slate-600">
-                <span>Employee ID</span>
-                <input value={editorUser.employeeId} onChange={(event) => setEditorUser((current) => ({ ...current, employeeId: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-sky-400" />
-              </label>
-
-              <label className="space-y-1 text-sm text-slate-600">
-                <span>Role</span>
-                <select value={editorUser.role} onChange={(event) => setEditorUser((current) => ({ ...current, role: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-sky-400">
-                  {roleOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="space-y-1 text-sm text-slate-600">
-                <span>Department</span>
-                <input value={editorUser.department} onChange={(event) => setEditorUser((current) => ({ ...current, department: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-sky-400" />
-              </label>
-
-              <label className="space-y-1 text-sm text-slate-600">
-                <span>Jurisdiction</span>
-                <select value={editorUser.jurisdiction} onChange={(event) => setEditorUser((current) => ({ ...current, jurisdiction: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-sky-400">
-                  {jurisdictionOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="space-y-1 text-sm text-slate-600">
-                <span>Status</span>
-                <select value={editorUser.status} onChange={(event) => setEditorUser((current) => ({ ...current, status: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-sky-400">
-                  {statusOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button onClick={() => { setEditorUser(null); setFormError('') }} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Cancel</button>
-              <button onClick={handleSaveEdit} className="rounded-xl bg-linear-to-r from-sky-600 to-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-200 hover:from-sky-500 hover:to-indigo-500">Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-    </>
-  )
+    </div>;
 }
 
-export default UsersPage
+function Field({ label, value, onChange, required = false, type = "text" }) {
+    return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">{label}{required ? " *" : ""}</span><input required={required} type={type} value={value || ""} onChange={(event) => onChange(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100" /></label>;
+}
+
+function Select({ label, value, options, onChange }) {
+    return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">{label}</span><select value={value || options[0]} onChange={(event) => onChange(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100">{options.map((option) => <option key={option}>{option}</option>)}</select></label>;
+}
+
+export default function UsersPage() {
+    const [users, setUsers] = useState([]);
+    const [projects] = useState(PROJECTS);
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [query, setQuery] = useState("");
+    const [filters, setFilters] = useState({ role: "All", status: "All", district: "All" });
+    const [menuId, setMenuId] = useState(null);
+    const [detailUser, setDetailUser] = useState(null);
+    const [editor, setEditor] = useState(null);
+    const [confirm, setConfirm] = useState(null);
+    const [notice, setNotice] = useState("");
+
+    useEffect(() => {
+        readOrSeedUsers().then((next) => { setUsers(next); setProfile(getAdminProfile()); }).catch((loadError) => setError(loadError.message)).finally(() => setLoading(false));
+    }, []);
+
+    useEffect(() => {
+        if (!detailUser) return undefined;
+        const previousOverflow = document.body.style.overflow;
+        const onKeyDown = (event) => { if (event.key === "Escape") setDetailUser(null); };
+        document.body.style.overflow = "hidden";
+        window.addEventListener("keydown", onKeyDown);
+        return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", onKeyDown); };
+    }, [detailUser]);
+
+    const districts = useMemo(() => ["All", ...new Set(users.map((user) => user.district).filter(Boolean))], [users]);
+    const visibleUsers = useMemo(() => users.filter((user) => {
+        const haystack = [user.name, user.employeeId, user.email, user.role, user.district, user.department].join(" ").toLowerCase();
+        return haystack.includes(query.toLowerCase()) && (filters.role === "All" || user.role === filters.role) && (filters.status === "All" || user.status === filters.status) && (filters.district === "All" || user.district === filters.district);
+    }), [users, query, filters]);
+    const manageable = (user) => canManageUser(profile, user);
+
+    const persist = (next, action, target) => {
+        const normalized = next.map(normalizeUser);
+        setUsers(normalized); saveUsers(normalized); recordAdminActivity({ action, module: "Users", target }); setNotice(`${action} completed.`); setMenuId(null);
+    };
+
+    const saveEditor = (event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const data = Object.fromEntries(form.entries());
+        if (!data.name.trim() || !data.email.trim() || !data.employeeId.trim()) { setError("Name, employee ID, and email are required."); return; }
+        if (editor.mode === "edit" && !manageable(editor.user)) { setError("You cannot modify a user outside your authorized jurisdiction."); return; }
+        const assignedProjects = String(data.assignedProjectIds || "").split(",").map((id) => id.trim()).filter(Boolean).map((id) => { const project = projects.find((entry) => project.projectId === id || String(entry.id) === id); return { id, title: project?.name || id }; });
+        const nextUser = normalizeUser({ ...editor.user, ...data, assignedProjects, permissions: data.permissions.split(",").map((item) => item.trim()).filter(Boolean), account: editor.user?.account });
+        const next = editor.mode === "edit" ? users.map((user) => user.id === editor.user.id ? nextUser : user) : [...users, { ...nextUser, id: nextUser.id || `USR-${Date.now()}`, account: { createdAt: new Date().toISOString().slice(0, 10), securityLevel: "Standard" } }];
+        persist(next, editor.mode === "edit" ? "User updated" : "User created", nextUser.name); setEditor(null); setError("");
+    };
+
+    const toggleStatus = (user) => { if (!manageable(user)) { setError("You cannot modify a user outside your authorized jurisdiction."); return; } const nextStatus = user.status === "Active" ? "Inactive" : "Active"; setConfirm({ title: `${nextStatus} user?`, message: `Change ${user.name} to ${nextStatus}?`, onConfirm: () => { persist(users.map((entry) => entry.id === user.id ? { ...entry, status: nextStatus } : entry), `User ${nextStatus.toLowerCase()}`, user.name); setConfirm(null); } }); };
+    const resetPassword = (user) => { if (!manageable(user)) { setError("You cannot modify a user outside your authorized jurisdiction."); return; } setConfirm({ title: "Reset password?", message: `Reset the password for ${user.name}?`, onConfirm: () => { persist(users.map((entry) => entry.id === user.id ? { ...entry, passwordResetAt: new Date().toISOString(), securityNote: "Password reset requested by administrator." } : entry), "Password reset", user.name); setConfirm(null); } }); };
+
+    if (loading) return <><Header title="Users" /><main className="min-h-screen bg-slate-50 p-12 text-center text-sm text-slate-500">Loading user records...</main></>;
+    if (error && !users.length) return <><Header title="Users" /><main className="min-h-screen bg-slate-50 p-8"><div className="mx-auto max-w-lg rounded-3xl border border-rose-200 bg-white p-8 text-center"><AlertCircle className="mx-auto h-9 w-9 text-rose-500" /><h1 className="mt-3 text-lg font-bold">Unable to load users</h1><p className="mt-2 text-sm text-slate-600">{error}</p></div></main></>;
+
+    return <>
+        <Header title="Users" />
+        <main className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)] px-4 py-6 text-slate-800 sm:px-6 lg:px-8"><div className="mx-auto max-w-7xl space-y-5">
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-600">Administration</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">User directory</h1><p className="mt-2 text-sm text-slate-500">Manage identities, roles, access scope, and project ownership from one controlled register.</p></div><button type="button" onClick={() => setEditor({ mode: "create", user: emptyUser })} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"><Plus className="h-4 w-4" />Add user</button></div></section>
+            {error ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{error}</div> : null}{notice ? <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"><CheckCircle2 className="h-4 w-4" />{notice}</div> : null}
+            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[["Total users", users.length, Users], ["Active", users.filter((user) => user.status === "Active").length, CheckCircle2], ["Pending", users.filter((user) => user.status === "Pending").length, ShieldCheck], ["Visible scope", visibleUsers.length, MapPinned]].map(([label, value, Icon]) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-slate-950">{value}</p></div><Icon className="h-5 w-5 text-sky-600" /></div></div>)}</section>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 lg:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name, employee ID, role, department..." className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-sky-400" /></label>{[["role", "Role", ROLE_OPTIONS], ["status", "Status", STATUS_OPTIONS], ["district", "District", districts]].map(([key, label, options]) => <select key={key} aria-label={label} value={filters[key]} onChange={(event) => setFilters({ ...filters, [key]: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm"><option value="All">All {label}s</option>{options.filter((option) => option !== "All").map((option) => <option key={option}>{option}</option>)}</select>)}</div></section>
+            <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-bold text-slate-900">Managed accounts</h2><p className="mt-1 text-xs text-slate-500">Only accounts within your authorized jurisdiction can be changed.</p></div>{visibleUsers.length === 0 ? <div className="p-16 text-center text-sm text-slate-500"><UserRound className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3">No users match these filters.</p></div> : <div className="overflow-x-auto"><table className="min-w-275 w-full text-left text-sm"><thead className="bg-slate-50 text-[10px] uppercase tracking-[0.14em] text-slate-500"><tr>{["User", "Role", "Jurisdiction", "Projects", "Status", "Last login", "Actions"].map((heading) => <th key={heading} className="px-5 py-3 font-bold">{heading}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{visibleUsers.map((user) => <tr key={user.id} className="hover:bg-sky-50/30"><td className="px-5 py-4"><p className="font-semibold text-slate-900">{user.name}</p><p className="mt-1 text-xs text-slate-500">{user.employeeId} · {user.email}</p></td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleTone[user.role] || "bg-slate-100 text-slate-600"}`}>{user.role}</span></td><td className="px-5 py-4 text-slate-600">{user.district || "Unassigned"}<span className="block text-xs text-slate-400">{user.jurisdiction}</span></td><td className="px-5 py-4 font-semibold text-slate-700">{Array.isArray(user.assignedProjects) ? user.assignedProjects.length : 0}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusTone[user.status] || "bg-slate-100 text-slate-600"}`}>{user.status}</span></td><td className="px-5 py-4 text-xs text-slate-500">{user.lastLogin || "Not recorded"}</td><td className="relative px-5 py-4"><div className="flex items-center gap-1"><button type="button" onClick={() => setDetailUser(user)} className="rounded-lg p-2 text-slate-500 hover:bg-sky-50 hover:text-sky-700" title="View user"><Eye className="h-4 w-4" /></button><button type="button" onClick={() => setMenuId(menuId === user.id ? null : user.id)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" title="User actions"><MoreVertical className="h-4 w-4" /></button></div>{menuId === user.id ? <div className="absolute right-5 top-12 z-20 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"><button type="button" onClick={() => { setEditor({ mode: "edit", user }); setMenuId(null); }} className="block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50">Edit profile & access</button><button type="button" onClick={() => toggleStatus(user)} className="block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50">{user.status === "Active" ? "Deactivate" : "Activate"}</button><button type="button" onClick={() => resetPassword(user)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50"><KeyRound className="h-3.5 w-3.5" />Reset password</button></div> : null}</td></tr>)}</tbody></table></div>}</section>
+        </div></main>
+        {editor ? <Modal title={editor.mode === "edit" ? "Edit user access" : "Add user"} onClose={() => setEditor(null)} wide><form onSubmit={saveEditor} className="space-y-5 p-5"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name" required value={editor.user.name} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, name: value } })} /><Field label="Employee ID" required value={editor.user.employeeId} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, employeeId: value } })} /><Field label="Email" required type="email" value={editor.user.email} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, email: value } })} /><Field label="Phone" value={editor.user.phone} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, phone: value } })} /><Field label="Department" required value={editor.user.department} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, department: value } })} /><Select label="Role" value={editor.user.role} options={ROLE_OPTIONS} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, role: value } })} /><Select label="Account status" value={editor.user.status} options={STATUS_OPTIONS} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, status: value } })} /><Field label="State" value={editor.user.state} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, state: value } })} /><Field label="District" value={editor.user.district} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, district: value } })} /><Select label="Jurisdiction level" value={editor.user.jurisdiction} options={["District Level", "Tehsil Level", "State Level", "All States"]} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, jurisdiction: value } })} /><Field label="Assigned project IDs" value={(editor.user.assignedProjects || []).map((project) => project.id || project).join(", ")} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, assignedProjectIds: value } })} /><Field label="Permissions" value={(editor.user.permissions || []).join(", ")} onChange={(value) => setEditor({ ...editor, user: { ...editor.user, permissions: value } })} /></div><div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" onClick={() => setEditor(null)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button><button type="submit" className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Save user</button></div></form></Modal> : null}
+        {detailUser ? <UserDetailsModal user={detailUser} onClose={() => setDetailUser(null)} /> : null}
+        {confirm ? <Modal title={confirm.title} onClose={() => setConfirm(null)}><div className="p-5"><p className="text-sm text-slate-600">{confirm.message}</p><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setConfirm(null)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button><button type="button" onClick={confirm.onConfirm} className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Confirm</button></div></div></Modal> : null}
+    </>;
+}

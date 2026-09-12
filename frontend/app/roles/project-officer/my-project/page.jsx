@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -26,6 +26,7 @@ import {
   riskOptions,
   statusOptions,
 } from "./projects-data";
+import { applyProjectAssignments, readProjectAssignments } from "@/app/lib/assignmentStore";
 
 const PAGE_SIZE = 6;
 
@@ -214,6 +215,7 @@ function EmptyState({ onClear }) {
 }
 
 export default function Page() {
+  const [projectRecords, setProjectRecords] = useState(PROJECTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -222,14 +224,18 @@ export default function Page() {
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => {
+    setProjectRecords(applyProjectAssignments(PROJECTS, readProjectAssignments()));
+  }, []);
+
   const summaryCounts = useMemo(
     () => ({
-      total: PROJECTS.length,
-      active: PROJECTS.filter((project) => ["Pending LAO Verification", "Under Acquisition", "On Hold"].includes(project.status)).length,
-      underAcquisition: PROJECTS.filter((project) => project.status === "Under Acquisition").length,
-      highRisk: PROJECTS.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
+      total: projectRecords.length,
+      active: projectRecords.filter((project) => ["Pending LAO Verification", "Under Acquisition", "On Hold"].includes(project.status)).length,
+      underAcquisition: projectRecords.filter((project) => project.status === "Under Acquisition").length,
+      highRisk: projectRecords.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
     }),
-    []
+    [projectRecords]
   );
 
   const clearFilters = () => {
@@ -245,7 +251,7 @@ export default function Page() {
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const result = PROJECTS.filter((project) => {
+    const result = projectRecords.filter((project) => {
       const matchesSearch =
         !normalizedQuery ||
         [
@@ -286,7 +292,7 @@ export default function Page() {
     });
 
     return result;
-  }, [districtFilter, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
+  }, [districtFilter, projectRecords, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
   const pageToRender = Math.min(currentPage, totalPages);

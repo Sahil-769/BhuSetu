@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -27,6 +27,7 @@ import {
   riskOptions,
   statusOptions,
 } from "../../project-officer/my-project/projects-data";
+import { applyProjectAssignments, readProjectAssignments } from "@/app/lib/assignmentStore";
 
 const PAGE_SIZE = 6;
 
@@ -263,6 +264,7 @@ function EmptyState({ onClear }) {
 }
 
 export default function Page() {
+  const [projectRecords, setProjectRecords] = useState(PROJECTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -271,15 +273,19 @@ export default function Page() {
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => {
+    setProjectRecords(applyProjectAssignments(PROJECTS, readProjectAssignments()));
+  }, []);
+
   const summaryCounts = useMemo(
     () => ({
-      total: PROJECTS.length,
-      highCritical: PROJECTS.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
-      medium: PROJECTS.filter((project) => project.riskCategory === "Medium").length,
-      low: PROJECTS.filter((project) => project.riskCategory === "Low").length,
-      pendingInterventions: PROJECTS.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold"].includes(project.status)).length,
+      total: projectRecords.length,
+      highCritical: projectRecords.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
+      medium: projectRecords.filter((project) => project.riskCategory === "Medium").length,
+      low: projectRecords.filter((project) => project.riskCategory === "Low").length,
+      pendingInterventions: projectRecords.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold"].includes(project.status)).length,
     }),
-    []
+    [projectRecords]
   );
 
   const clearFilters = () => {
@@ -295,7 +301,7 @@ export default function Page() {
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const result = PROJECTS.filter((project) => {
+    const result = projectRecords.filter((project) => {
       const matchesSearch =
         !normalizedQuery ||
         [project.name, project.projectId, project.district, project.village, project.type]
@@ -330,7 +336,7 @@ export default function Page() {
     });
 
     return result;
-  }, [districtFilter, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
+  }, [districtFilter, projectRecords, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
   const pageToRender = Math.min(currentPage, totalPages);

@@ -1,4 +1,4 @@
-const roles = ["project-officer","LandAcqOfficer","nodal-officer","admin"]
+const roles = ["project-officer","LandAcqOfficer","nodal-officer","admin","super-admin"]
 const SidebarConfig = {
   roles: {
     'project-officer': {
@@ -54,11 +54,36 @@ const SidebarConfig = {
         { name: "dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
         { name: "users", url: `/roles/${roles[3]}/users`, icon: "👤" },
         { name: "Jurisdiction", url: `/roles/${roles[3]}/jurisdiction`, icon: "⚖️" },
-        { name: "assignment", url: `/roles/${roles[3]}/assignment`, icon: "📌" },
-        { name: "gis overview", url: `/roles/${roles[3]}/gis`, icon: "🌍" },
+        { name: "assignment", url: `/roles/${roles[3]}/assingment`, icon: "📌" },
+        { name: "gis overview", url: `/roles/${roles[3]}/gis-overview`, icon: "🌍" },
         { name: "Notifications", url: `/roles/${roles[3]}/notification`, icon: "🔔" },
-        { name: "audit logs", url: `/roles/${roles[3]}/audit-log`, icon: "🔐" },
+        { name: "audit logs", url: `/roles/${roles[3]}/audit-logs`, icon: "🔐" },
         { name: "configuration", url: `/roles/${roles[3]}/configuration`, icon: "🛠️" },
+      ],
+      groups: [
+        {
+          label: "Main",
+          tabs: [
+            { name: "dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
+            { name: "gis overview", url: `/roles/${roles[3]}/gis-overview`, icon: "🌍" },
+          ],
+        },
+        {
+          label: "Administration",
+          tabs: [
+            { name: "users", url: `/roles/${roles[3]}/users`, icon: "👤" },
+            { name: "Jurisdiction", url: `/roles/${roles[3]}/jurisdiction`, icon: "⚖️" },
+            { name: "assignment", url: `/roles/${roles[3]}/assingment`, icon: "📌" },
+          ],
+        },
+        {
+          label: "System",
+          tabs: [
+            { name: "Notifications", url: `/roles/${roles[3]}/notification`, icon: "🔔" },
+            { name: "audit logs", url: `/roles/${roles[3]}/audit-logs`, icon: "🔐" },
+            { name: "configuration", url: `/roles/${roles[3]}/configuration`, icon: "🛠️" },
+          ],
+        },
       ],
     },
     
