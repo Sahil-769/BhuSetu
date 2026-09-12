@@ -53,7 +53,7 @@ const SidebarConfig = {
       tabs: [
         { name: "dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
         { name: "users", url: `/roles/${roles[3]}/users`, icon: "👤" },
-        { name: "Jurisdiction", url: `/roles/${roles[3]}/Jurisdiction`, icon: "⚖️" },
+        { name: "Jurisdiction", url: `/roles/${roles[3]}/jurisdiction`, icon: "⚖️" },
         { name: "assignment", url: `/roles/${roles[3]}/assignment`, icon: "📌" },
         { name: "gis overview", url: `/roles/${roles[3]}/gis`, icon: "🌍" },
         { name: "Notifications", url: `/roles/${roles[3]}/notification`, icon: "🔔" },

@@ -51,6 +51,7 @@ const Sidebar = () => {
       "/roles/LandAcqOfficer": ["/roles/LandAcqOfficer", "/roles/LandAcqOfficer/dashboard"],
       "/roles/project-officer": ["/roles/project-officer", "/roles/project-officer/dashboard"],
       "/roles/nodal-officer": ["/roles/nodal-officer", "/roles/nodal-officer/dashboard"],
+      "/roles/admin": ["/roles/admin", "/roles/admin/dashboard"],
     };
 
     if (rootMatches[targetPath]) {
