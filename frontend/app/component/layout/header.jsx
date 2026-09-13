@@ -29,7 +29,7 @@ const Header = ({ title }) => {
         : pathname?.startsWith("/roles/super-admin")
           ? "super-admin"
           : pathname?.startsWith("/roles/admin")
-            ? "system-admin"
+            ? "admin"
             : "nodal-officer";
 
   const currentUser = HeaderConfig.roles[currentRole] ?? HeaderConfig.roles["nodal-officer"];

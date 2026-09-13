@@ -1,4 +1,4 @@
-const roles = ["project-officer", "LandAcqOfficer", "nodal-officer", "super-admin"];
+const roles = ["project-officer", "LandAcqOfficer", "nodal-officer",'admin',"super-admin"];
 const SidebarConfig = {
   roles: {
     'project-officer': {
@@ -43,20 +43,61 @@ const SidebarConfig = {
         { name: "Notifications", url: `/roles/${roles[2]}/notification`, icon: "🔔" },
       ],
     },
+    'admin': {
+      title: roles[3],
+      profileImg: "/images/logo.png",
+      logout: { name: "LogOut", url: `/roles/${roles[3]}/logout`, icon: "➜" },
+      role: "Nodal Officer",
+      tabs: [
+        { name: "dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
+        { name: "users", url: `/roles/${roles[3]}/users`, icon: "👤" },
+        { name: "Jurisdiction", url: `/roles/${roles[3]}/jurisdiction`, icon: "⚖️" },
+        { name: "assignment", url: `/roles/${roles[3]}/assingment`, icon: "📌" },
+        { name: "gis overview", url: `/roles/${roles[3]}/gis-overview`, icon: "🌍" },
+        { name: "Notifications", url: `/roles/${roles[3]}/notification`, icon: "🔔" },
+        { name: "audit logs", url: `/roles/${roles[3]}/audit-logs`, icon: "🔐" },
+        { name: "configuration", url: `/roles/${roles[3]}/configuration`, icon: "🛠️" },
+      ],
+      groups: [
+        {
+          label: "Main",
+          tabs: [
+            { name: "dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
+            { name: "gis overview", url: `/roles/${roles[3]}/gis-overview`, icon: "🌍" },
+          ],
+        },
+        {
+          label: "Administration",
+          tabs: [
+            { name: "users", url: `/roles/${roles[3]}/users`, icon: "👤" },
+            { name: "Jurisdiction", url: `/roles/${roles[3]}/jurisdiction`, icon: "⚖️" },
+            { name: "assignment", url: `/roles/${roles[3]}/assingment`, icon: "📌" },
+          ],
+        },
+        {
+          label: "System",
+          tabs: [
+            { name: "Notifications", url: `/roles/${roles[3]}/notification`, icon: "🔔" },
+            { name: "audit logs", url: `/roles/${roles[3]}/audit-logs`, icon: "🔐" },
+            { name: "configuration", url: `/roles/${roles[3]}/configuration`, icon: "🛠️" },
+          ],
+        },
+      ],
+    },
     'super-admin': {
       title: roles[3],
-      logout: { name: "LogOut", url: `/roles/${roles[3]}/logout`, icon: "➜" },
+      logout: { name: "LogOut", url: `/roles/${roles[4]}/logout`, icon: "➜" },
       role: "Super Admin",
       tabs: [
-        { name: "Dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
-        { name: "Admin Management", url: `/roles/${roles[3]}/admin-management`, icon: "🛡️" },
-        { name: "Jurisdictions", url: `/roles/${roles[3]}/jurisdictions`, icon: "🗺️" },
-        { name: "Assignments", url: `/roles/${roles[3]}/assignments`, icon: "🔗" },
-        { name: "Projects", url: `/roles/${roles[3]}/projects`, icon: "📁" },
-        { name: "Notifications", url: `/roles/${roles[3]}/notifications`, icon: "🔔" },
-        { name: "Audit Logs", url: `/roles/${roles[3]}/audit-logs`, icon: "🧾" },
-        { name: "Configuration", url: `/roles/${roles[3]}/configuration`, icon: "⚙️" },
-        { name: "Security", url: `/roles/${roles[3]}/security`, icon: "🔒" },
+        { name: "Dashboard", url: `/roles/${roles[4]}/`, icon: "📊" },
+        { name: "Admin Management", url: `/roles/${roles[4]}/admin-management`, icon: "🛡️" },
+        { name: "Jurisdictions", url: `/roles/${roles[4]}/jurisdictions`, icon: "🗺️" },
+        { name: "Assignments", url: `/roles/${roles[4]}/assignments`, icon: "🔗" },
+        { name: "Projects", url: `/roles/${roles[4]}/projects`, icon: "📁" },
+        { name: "Notifications", url: `/roles/${roles[4]}/notifications`, icon: "🔔" },
+        { name: "Audit Logs", url: `/roles/${roles[4]}/audit-logs`, icon: "🧾" },
+        { name: "Configuration", url: `/roles/${roles[4]}/configuration`, icon: "⚙️" },
+        { name: "Security", url: `/roles/${roles[4]}/security`, icon: "🔒" },
       ],
     },
   },

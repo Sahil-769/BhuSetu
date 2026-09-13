@@ -14,13 +14,15 @@ const Sidebar = () => {
     useLayout();
   const navRef = React.useRef(null);
 
-  const currentRole = pathname.startsWith("/roles/project-officer")
+  const currentRole = pathname?.startsWith("/roles/project-officer")
     ? "project-officer"
-    : pathname.startsWith("/roles/LandAcqOfficer")
+    : pathname?.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
-      : pathname.startsWith("/roles/super-admin")
-        ? "super-admin"
-        : "nodal-officer";
+        : pathname?.startsWith("/roles/super-admin")
+          ? "super-admin"
+          : pathname?.startsWith("/roles/admin")
+            ? "admin"
+            : "nodal-officer";
 
   const currentRoleData =
     SidebarConfig.roles[currentRole];
@@ -51,6 +53,7 @@ const Sidebar = () => {
       "/roles/LandAcqOfficer": ["/roles/LandAcqOfficer", "/roles/LandAcqOfficer/dashboard"],
       "/roles/project-officer": ["/roles/project-officer", "/roles/project-officer/dashboard"],
       "/roles/nodal-officer": ["/roles/nodal-officer", "/roles/nodal-officer/dashboard"],
+      "/roles/admin": ["/roles/admin", "/roles/admin/dashboard"],
       "/roles/super-admin": ["/roles/super-admin", "/roles/super-admin/dashboard"],
     };
 

@@ -13,7 +13,7 @@ const PROFILE_ROLE_MAP = {
   "land_acquisition_officer": "land_acquisition_officer",
   "nodal-officer": "nodal_officer",
   "nodal_officer": "nodal_officer",
-  "system-admin": "system_admin",
+  "admin": "admin",
   "system_admin": "system_admin",
   "admin": "system_admin",
 };
