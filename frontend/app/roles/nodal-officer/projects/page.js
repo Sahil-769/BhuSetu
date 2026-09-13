@@ -54,6 +54,9 @@ const statusTone = {
   "Under Acquisition": "border-sky-200 bg-sky-50 text-sky-700",
   "On Hold": "border-stone-200 bg-stone-100 text-stone-700",
   Completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "Submitted to Super Admin": "border-sky-200 bg-sky-50 text-sky-700",
+  Verified: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "Sent Back for Correction": "border-amber-200 bg-amber-50 text-amber-700",
 };
 
 const riskTone = {
@@ -293,7 +296,7 @@ export default function Page() {
       low: projectList.filter((project) => (project.aiAssessment?.category || project.riskCategory) === "Low").length,
       pendingInterventions: projectList.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold", "Intervention Required"].includes(project.status)).length,
     }),
-    []
+    [projects]
   );
 
   const clearFilters = () => {
@@ -450,7 +453,7 @@ export default function Page() {
 
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
-              <FilterSelect label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} options={statusOptions} />
+              <FilterSelect label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} options={[...statusOptions, "Submitted to Super Admin", "Verified", "Sent Back for Correction"]} />
             </div>
             <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
               <FilterSelect label="Project Type" value={typeFilter} onChange={(value) => { setTypeFilter(value); setCurrentPage(1); }} options={projectTypeOptions} />

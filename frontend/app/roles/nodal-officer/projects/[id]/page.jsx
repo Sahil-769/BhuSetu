@@ -66,6 +66,11 @@ const riskTone = {
   "N/A": "border-slate-200 bg-slate-100 text-slate-600",
 };
 
+const workflowTone = {
+  Completed: "border-sky-200 bg-sky-50 text-sky-700",
+  Verified: "border-emerald-200 bg-emerald-50 text-emerald-700",
+};
+
 const officerOptions = [
   "Amit Sharma",
   "Priya Nair",
@@ -264,6 +269,22 @@ export default function ProjectDetailPage() {
     }), "Nodal intervention recorded");
   };
 
+  const submitToSuperAdmin = () => {
+    const submittedAt = new Date().toISOString();
+    updateSuperAdminState((current) => addAuditLog(current, "Project submitted to Super Admin", project.name, "Workflow", (next) => ({
+      ...next,
+      projects: next.projects.map((item) => item.id === project.id ? {
+        ...item,
+        status: "Completed",
+        workflowStatus: "Completed",
+        nodalReviewCompleted: true,
+        submittedAt,
+        submittedBy: "Sahil Alvi",
+        workflowActivity: [{ id: `workflow-${Date.now()}`, action: "Submitted to Super Admin", actor: "Sahil Alvi", role: "Nodal Officer", timestamp: submittedAt, status: "Completed" }, ...(item.workflowActivity || [])],
+      } : item),
+    })));
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <Header title="Projects" />
@@ -302,8 +323,17 @@ export default function ProjectDetailPage() {
               <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] ${riskTone[project.riskCategory] || riskTone["N/A"]}`}>
                 {project.riskProbability}% {project.riskCategory} RISK
               </span>
+              {project.nodalReviewCompleted ? (
+                <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold ${workflowTone[project.workflowStatus] || "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>Nodal review completed</span>
+              ) : null}
             </div>
           </div>
+
+          {project.nodalReviewCompleted ? (
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              Completed and submitted to Super Admin on {formatDateTime(project.submittedAt)} by {project.submittedBy}. Nodal review is locked.
+            </div>
+          ) : null}
 
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -443,7 +473,7 @@ export default function ProjectDetailPage() {
               </span>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleSubmit} className={`mt-4 space-y-4 ${project.nodalReviewCompleted ? "pointer-events-none opacity-60" : ""}`}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block text-sm font-medium text-slate-700">
                   <span className="mb-1 block text-[11px] uppercase tracking-[0.12em] text-slate-500">Decision / action</span>
@@ -538,6 +568,16 @@ export default function ProjectDetailPage() {
                 <ChevronRight className="h-4 w-4" />
               </button>
             </form>
+
+            <button
+              type="button"
+              onClick={submitToSuperAdmin}
+              disabled={project.nodalReviewCompleted}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {project.nodalReviewCompleted ? "Submitted to Super Admin" : "Submit to Super Admin"}
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

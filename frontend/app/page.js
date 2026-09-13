@@ -9,6 +9,7 @@ const page = () => {
       <a href="/roles/LandAcqOfficer/" className='boxes'>Land&nbsp;Acquarisation&nbsp;Officer</a>
       <a href="/roles/nodal-officer/" className='boxes'>Nodel&nbsp;Officer</a>
       <a href="/roles/admin" className='boxes'>Admin</a>
+      <a href="/roles/super-admin" className='boxes'>Super&nbsp;Admin</a>
     </div>
   )
 }
