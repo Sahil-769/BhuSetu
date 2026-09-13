@@ -26,11 +26,14 @@ const Header = ({ title }) => {
     ? "project-officer"
     : pathname?.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
-      : pathname?.startsWith("/roles/admin")
-        ? "system-admin"
-        : "nodal-officer";
+        : pathname?.startsWith("/roles/super-admin")
+          ? "super-admin"
+          : pathname?.startsWith("/roles/admin")
+            ? "system-admin"
+            : "nodal-officer";
 
   const currentUser = HeaderConfig.roles[currentRole] ?? HeaderConfig.roles["nodal-officer"];
+  const isSuperAdmin = currentRole === "super-admin";
 
   const toggleDropdown = () => {
     setIsDropdownOpen((prev) => {
@@ -57,7 +60,7 @@ const Header = ({ title }) => {
   return (
     <header className="h-15 z-1000">
       <div
-        className={`fixed top-0 right-0 z-1000 bg-[#fdfdff] shadow-sm
+        className={`fixed top-0 right-0 z-2000 bg-[#fdfdff] shadow-sm
         flex justify-between items-center md:px-2 md:pr-5 md:py-4 h-16
         transition-all duration-300 left-0
         ${isCollapsed ? "md:left-20" : "left-0 md:left-64"}`}
@@ -85,7 +88,7 @@ const Header = ({ title }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <div ref={dropdownRef} className="relative">
+          {!isSuperAdmin && <div ref={dropdownRef} className="relative">
             <div
               onMouseEnter={() => setIsDropdownOpen(true)}
               onClick={toggleDropdown}
@@ -149,7 +152,7 @@ const Header = ({ title }) => {
                 </button>
               </div>
             )}
-          </div>
+          </div>}
           <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-100 border border-slate-200/80 shadow-sm text-sm cursor-pointer hover:bg-slate-100 transition-all duration-300">
             <svg className="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -161,11 +164,11 @@ const Header = ({ title }) => {
         </div>
       </div>
 
-      <ProfilePopup
+      {!isSuperAdmin && <ProfilePopup
         role={currentRole}
         isOpen={isProfilePopupOpen}
         onClose={() => setIsProfilePopupOpen(false)}
-      />
+      />}
 
       <SettingsPopup
         role={currentRole}

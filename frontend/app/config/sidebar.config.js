@@ -1,4 +1,4 @@
-const roles = ["project-officer","LandAcqOfficer","nodal-officer"]
+const roles = ["project-officer", "LandAcqOfficer", "nodal-officer", "super-admin"];
 const SidebarConfig = {
   roles: {
     'project-officer': {
@@ -27,7 +27,7 @@ const SidebarConfig = {
         { name: "Acquisition Cases", url: `/roles/${roles[1]}/acquisition-cases`, icon: "📋" },
         { name: "Map View", url: `/roles/${roles[1]}/gis`, icon: "📍" },
         { name: "Notifications", url: `/roles/${roles[1]}/notification`, icon: "🔔" },
-        { name: "Reports", url: `/roles/${roles[1]}/gis`, icon: "📊" },
+        { name: "Reports", url: `/roles/${roles[1]}/reports`, icon: "📊" },
 
       ],
     },
@@ -43,6 +43,17 @@ const SidebarConfig = {
         { name: "Risk Map", url: `/roles/${roles[2]}/risk-map`, icon: "🚨" },
         { name: "Analytics", url: `/roles/${roles[2]}/analytics`, icon: "🎯" },
         { name: "Notifications", url: `/roles/${roles[2]}/notification`, icon: "🔔" },
+      ],
+    },
+    'super-admin': {
+      title: roles[3],
+      logout: { name: "LogOut", url: `/roles/${roles[3]}/logout`, icon: "➜" },
+      role: "Super Admin",
+      tabs: [
+        { name: "Dashboard", url: `/roles/${roles[3]}/`, icon: "📊" },
+        { name: "Users", url: `/roles/${roles[3]}/users`, icon: "👥" },
+        { name: "Projects", url: `/roles/${roles[3]}/projects`, icon: "📁" },
+        { name: "Audit Log", url: `/roles/${roles[3]}/audit-log`, icon: "🧾" },
       ],
     },
   },

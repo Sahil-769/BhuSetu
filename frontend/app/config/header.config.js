@@ -36,6 +36,13 @@ const HeaderConfig = {
       state: "Uttar Pradesh",
       district: "State Office",
     },
+     'super-admin': {
+      title: "Super Admin",
+      logout: { name: "LogOut", url: "/roles/admin/logout", icon: "➜" },
+      role: "Super Admin",
+      state: "National Level",
+      district: "Administrative Office",
+    },
   },
 };
 

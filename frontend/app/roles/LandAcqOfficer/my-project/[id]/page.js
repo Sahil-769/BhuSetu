@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -39,6 +39,13 @@ export default function ProjectDetails({ params }) {
     land: true,
     documents: true,
   });
+  const [verificationStatus, setVerificationStatus] = useState(null);
+
+  useEffect(() => {
+    if (project) {
+      setVerificationStatus(window.localStorage.getItem(`bhoomi-verification:${project.projectId || project.id}`));
+    }
+  }, [project]);
 
   if (!project) {
     return (
@@ -188,7 +195,7 @@ export default function ProjectDetails({ params }) {
 
         <div className="mb-6">
           <Link
-            href="/roles/LandAcqOfficer"
+            href="/roles/LandAcqOfficer/my-project"
             className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600"
           >
             <ArrowLeft size={18} />
@@ -380,12 +387,13 @@ export default function ProjectDetails({ params }) {
                     Project location and acquisition corridor
                   </p>
 
-                  <button
+                  <Link
+                    href={`/roles/LandAcqOfficer/gis?project=${project.id}`}
                     className="mt-4 inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white "
                   >
                     <Map size={16} />
                     Open Full Map
-                  </button>
+                  </Link>
 
                 </div>
 
@@ -560,13 +568,20 @@ export default function ProjectDetails({ params }) {
 
               <div className="space-y-3">
 
-                <Link
-                  href={`/roles/LandAcqOfficer/acquisition cases/${projectId}/verify`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 font-semibold text-white "
-                >
-                  <ShieldCheck size={18} />
-                  Start Verification
-                </Link>
+                {verificationStatus === "Verified" ? (
+                  <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white">
+                    <CheckCircle2 size={18} />
+                    Verified
+                  </div>
+                ) : (
+                  <Link
+                    href={`/roles/LandAcqOfficer/acquisition-cases/${projectId}/verify`}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 font-semibold text-white "
+                  >
+                    <ShieldCheck size={18} />
+                    Start Verification
+                  </Link>
+                )}
 
                 <Link
                   href={`/roles/LandAcqOfficer/parcels/${projectId}`}
@@ -574,6 +589,14 @@ export default function ProjectDetails({ params }) {
                 >
                   <LandPlot size={18} />
                   Verify Parcels
+                </Link>
+
+                <Link
+                  href={`/roles/LandAcqOfficer/GIS?project=${project.id}`}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  <Map size={18} />
+                  View Required Land Map
                 </Link>
 
                 <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 font-semibold text-amber-700 hover:bg-amber-100">

@@ -28,7 +28,7 @@ body{
 
 /* Page container */
 .page-shell {
-	@apply min-h-screen bg-slate-50 pt-5 pb-8;
+	@apply min-h-screen bg-slate-50 pt-20 pb-8;
 }
 .page-container {
 	@apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
