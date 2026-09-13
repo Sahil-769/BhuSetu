@@ -23,7 +23,7 @@ const SidebarConfig = {
       tabs: [
         { name: "dashboard", url: `/roles/${roles[1]}/`, icon: "📊" },
         { name: "My Assigned Projects", url: `/roles/${roles[1]}/my-project`, icon: "📁" },
-        { name: "Parcel Verification", url: `/roles/${roles[1]}/parcels`, icon: "🗺️" },
+        { name: "Parcels", url: `/roles/${roles[1]}/parcels`, icon: "🗺️" },
         { name: "Acquisition Cases", url: `/roles/${roles[1]}/acquisition-cases`, icon: "📋" },
         { name: "Map View", url: `/roles/${roles[1]}/gis`, icon: "📍" },
         { name: "Notifications", url: `/roles/${roles[1]}/notification`, icon: "🔔" },

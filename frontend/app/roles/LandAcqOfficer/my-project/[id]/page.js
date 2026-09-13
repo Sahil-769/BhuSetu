@@ -21,6 +21,7 @@ import {
   Users,
   Ruler,
   Briefcase,
+  Plus,
 } from "lucide-react";
 
 import { PROJECTS } from "../projects-data";
@@ -40,10 +41,10 @@ export default function ProjectDetails({ params }) {
     documents: true,
   });
   const [verificationStatus, setVerificationStatus] = useState(null);
-
   useEffect(() => {
     if (project) {
-      setVerificationStatus(window.localStorage.getItem(`bhoomi-verification:${project.projectId || project.id}`));
+      const storageKey = project.projectId || project.id;
+      setVerificationStatus(window.localStorage.getItem(`bhoomi-verification:${storageKey}`));
     }
   }, [project]);
 
@@ -537,10 +538,9 @@ export default function ProjectDetails({ params }) {
             </Section>
 
           </div>
+          
 
-          {/* =================================================
-              RIGHT SIDEBAR
-          ================================================= */}
+
 
           <div className="space-y-5">
 
@@ -584,14 +584,6 @@ export default function ProjectDetails({ params }) {
                 )}
 
                 <Link
-                  href={`/roles/LandAcqOfficer/parcels/${projectId}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 font-semibold text-blue-700 hover:bg-blue-100"
-                >
-                  <LandPlot size={18} />
-                  Verify Parcels
-                </Link>
-
-                <Link
                   href={`/roles/LandAcqOfficer/GIS?project=${project.id}`}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-100"
                 >
@@ -604,6 +596,31 @@ export default function ProjectDetails({ params }) {
                   Raise an Issue
                 </button>
 
+              </div>
+
+            </div>
+
+            {/* ADD PARCELS */}
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+              <div className="mb-5 flex flex-nowrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+                    <LandPlot size={23} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900">Add Parcels</h3>
+                    <p className="text-sm text-slate-500">Add land parcels for this project</p>
+                  </div>
+                </div>
+                <Link
+                  href={`/roles/LandAcqOfficer/parcels/${projectId}`}
+                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  <Plus size={18} />
+                  Add Parcels
+                </Link>
               </div>
 
             </div>
@@ -876,5 +893,21 @@ function SummaryItem({ icon, label, value }) {
       </span>
 
     </div>
+  );
+}
+
+function ParcelInput({ label, value, onChange, ...inputProps }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+        {label}
+      </span>
+      <input
+        {...inputProps}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+      />
+    </label>
   );
 }

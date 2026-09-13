@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   FileText,
@@ -82,6 +83,12 @@ const acquisitionCases = [
 export default function AcquisitionCasesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Cases");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const parcelId = searchParams.get("parcelId");
+    if (parcelId) setSearch(parcelId);
+  }, [searchParams]);
 
   const filteredCases = acquisitionCases.filter((item) => {
     const searchText = search.toLowerCase();
@@ -287,6 +294,13 @@ function AcquisitionCaseCard({ item }) {
         Open Case
 
         <ArrowRight size={21} />
+      </Link>
+
+      <Link
+        href={`/roles/LandAcqOfficer/acquisition-cases/${item.id}/verify`}
+        className="mt-3 flex h-10 w-full items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-base font-semibold text-emerald-700 transition hover:bg-emerald-100"
+      >
+        Verify Project
       </Link>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,6 +14,21 @@ import {
 
 export default function AcquisitionCasePage({ params }) {
   const { id } = React.use(params);
+  const [verificationComplete, setVerificationComplete] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    setVerificationComplete(
+      window.localStorage.getItem(`bhoomi-case-verified:${id}`) === "true"
+    );
+  }, [id]);
+
+  const submitVerification = () => {
+    window.localStorage.setItem(`bhoomi-case-verified:${id}`, "true");
+    setVerificationComplete(true);
+    setNotice("Verification completed and submitted successfully.");
+    window.setTimeout(() => setNotice(""), 3500);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -61,8 +76,16 @@ export default function AcquisitionCasePage({ params }) {
 
             </div>
 
-            <span className="rounded-full bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-700">
-              Compensation Pending
+            <span
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                verificationComplete
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-yellow-50 text-yellow-700"
+              }`}
+            >
+              {verificationComplete
+                ? "Verification Completed"
+                : "Compensation Pending"}
             </span>
 
           </div>
@@ -231,7 +254,28 @@ export default function AcquisitionCasePage({ params }) {
                 Actions available for this case
               </p>
 
+              {notice && (
+                <div
+                  role="status"
+                  className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800"
+                >
+                  {notice}
+                </div>
+              )}
+
               <div className="mt-5 space-y-3">
+
+                <button
+                  type="button"
+                  onClick={submitVerification}
+                  disabled={verificationComplete}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-700"
+                >
+                  <CheckCircle2 size={18} />
+                  {verificationComplete
+                    ? "Verification Completed"
+                    : "Submit Verification"}
+                </button>
 
                 <button className="w-full rounded-xl bg-black px-4 py-3 font-semibold text-white hover:bg-slate-800">
                   Review Case
