@@ -521,6 +521,93 @@ The ultimate goal of the platform is:
 
 ---
 
+# ▶️ Run and Verify the Current Prototype
+
+The repository currently contains a working FastAPI integration for project persistence, the existing XGBoost model, AI assessments, risk history, acquisition updates, interventions, and risk-distribution analytics. The frontend is a Next.js application.
+
+## 1. Start the backend
+
+Open PowerShell in the repository root:
+
+```powershell
+cd backend
+python -m pip install -r requirements.txt
+$env:PYTHONPATH = "."
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+The backend uses SQLite by default and creates `bhoomi_ai.db` on first start. The existing model is loaded from `machine-learning-algo/land_acquisition_xgb_model.pkl` through the paths in [backend/.env.example](backend/.env.example). Copy those values into your environment if you need custom paths or a PostgreSQL database.
+
+Check the service at:
+
+- API health: http://localhost:8000/api/health
+- Interactive API docs: http://localhost:8000/docs
+
+The health response should report `model_loaded: true` and `prediction_source: ML_MODEL`. If the model cannot load, the API remains available and marks predictions as `RULE_BASED_FALLBACK`.
+
+## 2. Start the frontend
+
+Open a second PowerShell window:
+
+```powershell
+cd frontend
+npm install
+$env:NEXT_PUBLIC_API_URL = "http://localhost:8000"
+npm run dev
+```
+
+Open http://localhost:3000 and select **Project Officer**. The implemented create-project flow sends the project to the FastAPI backend. If the backend is offline, it displays a warning and retains the existing local demo-store behavior.
+
+## 3. Verify the implemented API flow
+
+With the backend running, use PowerShell:
+
+```powershell
+$project = Invoke-RestMethod http://localhost:8000/api/projects -Method Post `
+     -ContentType "application/json" `
+     -Body (@{
+          projectId = "DEMO-2026-001"
+          projectName = "Demo Highway"
+          projectType = "Highway"
+          state = "Delhi"
+          district = "Delhi"
+          village = "Demo Village"
+          tehsil = "Demo Tehsil"
+          requiredLandArea = 12.5
+          latitude = 28.6139
+          longitude = 77.2090
+     } | ConvertTo-Json)
+
+Invoke-RestMethod "http://localhost:8000/api/ai/predict/$($project.id)" -Method Post
+Invoke-RestMethod "http://localhost:8000/api/ai/history/$($project.id)"
+```
+
+To verify dynamic recalculation, update acquisition data:
+
+```powershell
+Invoke-RestMethod "http://localhost:8000/api/projects/$($project.id)/acquisition" -Method Put `
+     -ContentType "application/json" `
+     -Body (@{
+          compensation_status = "Paid"
+          legal_status = "Resolved"
+          ownership_status = "Verified"
+          rr_status = "Completed"
+          approval_status = "Approved"
+          documents_status = "Complete"
+     } | ConvertTo-Json)
+```
+
+This creates a new assessment and risk-history record with the changed fields and a trend such as `DECREASING`.
+
+## Current limitations
+
+- The default database is SQLite for easy local demonstration; PostgreSQL/PostGIS wiring is not finished.
+- Existing role pages still primarily use browser demo state; the complete LAO, Nodal Officer, and Admin UI integration is pending.
+- Create Project now uses a real Leaflet Draw editor for polygon and polyline geometry, including edit/delete controls, coordinate capture, and approximate area/route measurements. Parcel intersection is not yet wired to the saved geometry.
+- The model produces real probability values, but confidence is omitted because the artifact does not expose a validated confidence measure.
+
+---
+
 ## 👥 Team
 
 **Project:** Land Acquisition Intelligence Platform

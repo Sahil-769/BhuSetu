@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 // @ts-ignore
 import "./page.css";
 import {
@@ -17,6 +18,9 @@ import {
 } from "lucide-react";
 import { Header } from "../../../component/layout/index";
 import { createWorkflowProject } from "../../../../components/workflowStore";
+import { api } from "../../../../lib/api";
+
+const CreateProjectMap = dynamic(() => import("./CreateProjectMap"), { ssr: false });
 const steps = [
   {
     id: 1,
@@ -90,6 +94,7 @@ function ErrorMessage({ message }) {
 
 export default function CreateProjectPage() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [submitState, setSubmitState] = useState({ loading: false, error: "" });
 
   const [formData, setFormData] = useState({
     projectId: "",
@@ -108,6 +113,8 @@ export default function CreateProjectPage() {
     longitude: "",
     routeLength: "",
     calculatedArea: "",
+    geometry: null,
+    geometryType: "",
 
     requiredLandArea: "",
     unit: "Hectare",
@@ -160,8 +167,8 @@ export default function CreateProjectPage() {
     }
 
     if (currentStep === 3) {
-      if (!formData.latitude || !formData.longitude) {
-        newErrors.location = "Please select the project location on the map";
+      if (!formData.geometry || !formData.latitude || !formData.longitude) {
+        newErrors.location = "Draw and save a project geometry on the map";
       }
     }
 
@@ -225,10 +232,12 @@ export default function CreateProjectPage() {
     setDocuments((prev) => prev.filter((doc) => doc.id !== id));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!validateStep()) return;
+
+    setSubmitState({ loading: true, error: "" });
 
     const projectPayload = {
       ...formData,
@@ -236,9 +245,17 @@ export default function CreateProjectPage() {
       status: "Pending LAO Verification",
     };
 
-    createWorkflowProject(projectPayload);
+    try {
+      await api.createProject(projectPayload);
+    } catch (error) {
+      createWorkflowProject(projectPayload);
+      setSubmitState({ loading: false, error: `Backend unavailable. Saved to local demo storage instead. ${error.message}` });
+      return;
+    }
 
-    alert("Project created successfully.");
+    setSubmitState({ loading: false, error: "" });
+    createWorkflowProject(projectPayload);
+    alert("Project created successfully and saved to the backend.");
   };
 
   const saveDraft = () => {
@@ -354,6 +371,11 @@ export default function CreateProjectPage() {
 
       {/* Main */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {submitState.error && (
+          <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            {submitState.error}
+          </p>
+        )}
         <form onSubmit={handleSubmit}>
           {/* STEP 1 */}
           {currentStep === 1 && (
@@ -615,39 +637,18 @@ export default function CreateProjectPage() {
                   </div>
                 </div>
 
-                {/* GIS Map Placeholder */}
                 <div>
                   <label className="form-label">
                     Project Map Location <Required />
                   </label>
 
                   <div className="relative h-105 overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
-                    <div className="flex h-full flex-col items-center justify-center text-center p-4">
-                      <MapPin className="h-10 w-10 text-slate-400" />
-                      <p className="mt-3 font-medium text-slate-700">
-                        Interactive GIS Map
-                      </p>
-                      <p className="mt-1 max-w-md text-sm text-slate-500">
-                        Integrate your Leaflet / React-Leaflet map here.
-                        {formData.locationType === "area"
-                          ? " Draw a polygon for the project area."
-                          : " Draw a route/polyline for the project corridor."}
-                      </p>
-                      <button
-                        type="button"
-                        className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-                        onClick={() => {
-                          updateField("latitude", "28.6139");
-                          updateField("longitude", "77.2090");
-                          updateField(
-                            formData.locationType === "area" ? "calculatedArea" : "routeLength",
-                            "15.5"
-                          );
-                        }}
-                      >
-                        Use Demo Location
-                      </button>
-                    </div>
+                    <CreateProjectMap
+                      isLinear={formData.locationType === "linear"}
+                      onGeometryChange={(geometryData) =>
+                        setFormData((previous) => ({ ...previous, ...geometryData }))
+                      }
+                    />
                   </div>
 
                   <ErrorMessage message={errors.location} />
@@ -695,6 +696,10 @@ export default function CreateProjectPage() {
                       className="form-input bg-slate-50"
                     />
                   </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                  Geometry: <strong>{formData.geometryType || "Not drawn"}</strong>
                 </div>
 
                 <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">

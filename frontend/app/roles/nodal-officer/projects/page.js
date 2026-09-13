@@ -296,7 +296,7 @@ export default function Page() {
       low: projectList.filter((project) => (project.aiAssessment?.category || project.riskCategory) === "Low").length,
       pendingInterventions: projectList.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold", "Intervention Required"].includes(project.status)).length,
     }),
-    [projects]
+    [projectList]
   );
 
   const clearFilters = () => {

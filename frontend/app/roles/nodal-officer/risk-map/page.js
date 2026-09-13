@@ -1,18 +1,17 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
+import nextDynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Circle,
-  MapContainer,
-  Marker,
-  Polygon,
-  Polyline,
-  Popup,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
-import L from "leaflet";
+const Circle = nextDynamic(() => import("react-leaflet").then((module) => module.Circle), { ssr: false });
+const MapContainer = nextDynamic(() => import("react-leaflet").then((module) => module.MapContainer), { ssr: false });
+const Marker = nextDynamic(() => import("react-leaflet").then((module) => module.Marker), { ssr: false });
+const Polygon = nextDynamic(() => import("react-leaflet").then((module) => module.Polygon), { ssr: false });
+const Polyline = nextDynamic(() => import("react-leaflet").then((module) => module.Polyline), { ssr: false });
+const Popup = nextDynamic(() => import("react-leaflet").then((module) => module.Popup), { ssr: false });
+const TileLayer = nextDynamic(() => import("react-leaflet").then((module) => module.TileLayer), { ssr: false });
 import "leaflet/dist/leaflet.css";
 import {
   ArrowRight,
@@ -163,7 +162,7 @@ export const getProjectGeometry = (project) => {
 };
 
 export const createMarkerIcon = (project, selected = false) =>
-  L.divIcon({
+  typeof window === "undefined" ? undefined : require("leaflet").divIcon({
     className: "map-project-marker",
     html: `<span style="display:flex; align-items:center; justify-content:center; width:${selected ? 22 : 18}px; height:${selected ? 22 : 18}px; border-radius:50%; background:${riskColors[project.riskCategory] || riskColors["N/A"]}; border:3px solid white; box-shadow:0 4px 12px rgba(15,23,42,0.18);"></span>`,
     iconSize: [selected ? 22 : 18, selected ? 22 : 18],
@@ -171,7 +170,7 @@ export const createMarkerIcon = (project, selected = false) =>
   });
 
 export const createClusterIcon = (count, selected = false) =>
-  L.divIcon({
+  typeof window === "undefined" ? undefined : require("leaflet").divIcon({
     className: "map-cluster-marker",
     html: `<span style="display:flex; align-items:center; justify-content:center; width:${selected ? 34 : 28}px; height:${selected ? 34 : 28}px; border-radius:50%; background:#fff; color:#0f172a; border:2px solid #cbd5e1; font-size:11px; font-weight:700; box-shadow:0 6px 18px rgba(15,23,42,0.12);">${count}</span>`,
     iconSize: [selected ? 34 : 28, selected ? 34 : 28],
@@ -224,33 +223,6 @@ function FilterSelect({ label, value, onChange, options }) {
       </select>
     </label>
   );
-}
-
-function MapBoundsController({ projects, mapRef }) {
-  const map = useMap();
-
-  useEffect(() => {
-    mapRef.current = map;
-
-    if (!projects.length) return;
-
-    const points = projects.flatMap((project) => {
-      const geometry = getProjectGeometry(project);
-      if (!geometry) return [];
-
-      const coordinates = [];
-      if (geometry.route) coordinates.push(...geometry.route);
-      if (geometry.polygon) coordinates.push(...geometry.polygon);
-      coordinates.push(geometry.point);
-      return coordinates;
-    });
-
-    if (points.length) {
-      map.fitBounds(points, { padding: [32, 32], maxZoom: 6 });
-    }
-  }, [map, mapRef, projects]);
-
-  return null;
 }
 
 export default function Page() {
@@ -482,7 +454,7 @@ export default function Page() {
             </div>
 
             <div ref={mapShellRef} className="relative z-0 h-[620px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-              <MapContainer
+                  <MapContainer
                 center={[23.0, 78.0]}
                 zoom={5}
                 scrollWheelZoom
@@ -491,7 +463,10 @@ export default function Page() {
                 style={{ overscrollBehavior: "contain", zIndex: 1 }}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <MapBoundsController projects={filteredProjects} mapRef={mapRef} />
+                    whenReady={(event) => {
+                      mapRef.current = event.target;
+                      resetMapView();
+                    }}
 
                 {filteredProjects.map((project) => {
                   const geometry = getProjectGeometry(project);

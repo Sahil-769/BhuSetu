@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Search,
@@ -80,7 +80,7 @@ const acquisitionCases = [
   },
 ];
 
-export default function AcquisitionCasesPage() {
+function AcquisitionCasesPageContent() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Cases");
   const searchParams = useSearchParams();
@@ -370,5 +370,13 @@ function StatusBadge({ status }) {
     >
       {status}
     </span>
+  );
+}
+
+export default function AcquisitionCasesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 px-4 py-6 text-sm text-slate-500 md:px-8">Loading acquisition cases...</div>}>
+      <AcquisitionCasesPageContent />
+    </Suspense>
   );
 }
