@@ -18,12 +18,14 @@ const Sidebar = () => {
     ? "project-officer"
     : pathname.startsWith("/roles/LandAcqOfficer")
       ? "LandAcqOfficer"
-      : "nodal-officer";
+      : pathname.startsWith("/roles/super-admin")
+        ? "super-admin"
+        : "nodal-officer";
 
   const currentRoleData =
     SidebarConfig.roles[currentRole];
   const tabs = currentRoleData.tabs;
-  const logo = currentRoleData.profileImg;
+  const logo = currentRoleData.profileImg || "/images/logo.png";
 
   // Close sidebar when clicking outside (mobile only)
   useEffect(() => {
@@ -49,6 +51,7 @@ const Sidebar = () => {
       "/roles/LandAcqOfficer": ["/roles/LandAcqOfficer", "/roles/LandAcqOfficer/dashboard"],
       "/roles/project-officer": ["/roles/project-officer", "/roles/project-officer/dashboard"],
       "/roles/nodal-officer": ["/roles/nodal-officer", "/roles/nodal-officer/dashboard"],
+      "/roles/super-admin": ["/roles/super-admin", "/roles/super-admin/dashboard"],
     };
 
     if (rootMatches[targetPath]) {
@@ -89,7 +92,7 @@ const Sidebar = () => {
 >
           <div className="flex flex-col gap-4 h-full">
             {/* Profile Section */}
-            <a href="/">
+            <Link href="/">
             <div
               className={`profile_info flex items-center gap-3 ${isCollapsed ? "" : "px-3 py-3"} rounded-3xl bg-linear-to-br from-slate-800/80 to-slate-950/80 shadow-xl ring-1 ring-white/10 mb-3 ${isCollapsed ? "justify-center" : ""} transition-all duration-300`}
             >
@@ -109,7 +112,7 @@ const Sidebar = () => {
                 </div>
                )}
             </div>
-               </a>
+               </Link>
 
             {/* Toggle Button */}
             <button
