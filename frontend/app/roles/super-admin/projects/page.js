@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Eye, FolderKanban, MapPin, Search, ShieldAlert, X } from "lucide-react";
 import { Header } from "../../../component/layout";
-import { PROJECTS } from "../../LandAcqOfficer/my-project/projects-data";
+import { PROJECTS } from "../../LandAcqOfficer/assigned-projects/projects-data";
+import { getWorkflowState, subscribeToWorkflow } from "../../../../components/workflowStore";
 
 const statusStyles = {
   "Under Acquisition": "bg-sky-50 text-sky-700",
@@ -22,17 +23,20 @@ const riskStyles = {
 };
 
 export default function ProjectsPage() {
+  const [projectList, setProjectList] = useState(() => getWorkflowState().projects);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All statuses");
   const [type, setType] = useState("All types");
   const [selectedProject, setSelectedProject] = useState(null);
 
-  const filteredProjects = useMemo(() => PROJECTS.filter((project) => {
+  useEffect(() => subscribeToWorkflow((state) => setProjectList(state.projects)), []);
+
+  const filteredProjects = useMemo(() => projectList.filter((project) => {
     const matchesQuery = `${project.name} ${project.projectId} ${project.district} ${project.village}`.toLowerCase().includes(query.toLowerCase());
     return matchesQuery && (status === "All statuses" || project.status === status) && (type === "All types" || project.type === type);
-  }), [query, status, type]);
+  }), [projectList, query, status, type]);
 
-  const totalLand = PROJECTS.reduce((sum, project) => sum + project.requiredLandArea, 0);
+  const totalLand = projectList.reduce((sum, project) => sum + project.requiredLandArea, 0);
 
   return (
     <>
@@ -42,7 +46,7 @@ export default function ProjectsPage() {
           <div className="mb-6"><p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Portfolio control</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Project oversight</h1><p className="mt-2 text-sm text-slate-500">Monitor land acquisition progress and risk across every district.</p></div>
 
           <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[{ label: "Total projects", value: PROJECTS.length, icon: FolderKanban, tone: "text-sky-600" }, { label: "Active acquisition", value: PROJECTS.filter((project) => project.status === "Under Acquisition").length, icon: MapPin, tone: "text-emerald-600" }, { label: "High or critical risk", value: PROJECTS.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length, icon: ShieldAlert, tone: "text-rose-600" }, { label: "Land in portfolio", value: `${totalLand} ha`, icon: FolderKanban, tone: "text-amber-600" }].map(({ label, value, icon: Icon, tone }) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><Icon className={`h-5 w-5 ${tone}`} /><p className="mt-3 text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-900">{value}</p></div>)}
+            {[{ label: "Total projects", value: projectList.length, icon: FolderKanban, tone: "text-sky-600" }, { label: "Active acquisition", value: projectList.filter((project) => project.status === "Under Acquisition").length, icon: MapPin, tone: "text-emerald-600" }, { label: "High or critical risk", value: projectList.filter((project) => ["High", "Critical"].includes(project.aiAssessment?.category || project.riskCategory)).length, icon: ShieldAlert, tone: "text-rose-600" }, { label: "Land in portfolio", value: `${totalLand} ha`, icon: FolderKanban, tone: "text-amber-600" }].map(({ label, value, icon: Icon, tone }) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><Icon className={`h-5 w-5 ${tone}`} /><p className="mt-3 text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-900">{value}</p></div>)}
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

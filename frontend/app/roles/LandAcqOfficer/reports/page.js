@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { Header } from "@/app/component/layout/index";
-import { PROJECTS } from "../my-project/projects-data";
+import { PROJECTS } from "../assigned-projects/projects-data";
 
 const statusTone = {
   Draft: "border-slate-200 bg-slate-100 text-slate-700",

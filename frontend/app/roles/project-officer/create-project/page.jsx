@@ -16,6 +16,7 @@ import {
   Save,
 } from "lucide-react";
 import { Header } from "../../../component/layout/index";
+import { createWorkflowProject } from "../../../../components/workflowStore";
 const steps = [
   {
     id: 1,
@@ -235,7 +236,7 @@ export default function CreateProjectPage() {
       status: "Pending LAO Verification",
     };
 
-    console.log("BHOOMI-AI Project Payload:", projectPayload);
+    createWorkflowProject(projectPayload);
 
     alert("Project created successfully.");
   };
@@ -247,7 +248,7 @@ export default function CreateProjectPage() {
       status: "Draft",
     };
 
-    console.log("Saved Draft:", draft);
+    createWorkflowProject(draft);
 
     alert("Project draft saved successfully.");
   };
@@ -951,11 +952,14 @@ export default function CreateProjectPage() {
                 </button>
 
                 <button
-                  type="submit"
-                  className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-sm hover:bg-blue-700"
-                >
-                  Submit Project
-                </button>
+  type="submit"
+  onClick={() => {
+    window.location.reload();
+  }}
+  className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-sm hover:bg-blue-700"
+>
+  Submit Project
+</button>
               </div>
             </section>
           )}

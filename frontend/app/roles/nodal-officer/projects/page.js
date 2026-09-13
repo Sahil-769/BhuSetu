@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -27,15 +27,26 @@ import {
   riskOptions,
   statusOptions,
 } from "../../project-officer/my-project/projects-data";
+import { getWorkflowState, subscribeToWorkflow } from "../../../../components/workflowStore";
 
 const PAGE_SIZE = 6;
 
-const formatDate = (value) =>
-  new Intl.DateTimeFormat("en-IN", {
+const formatDate = (value) => {
+  // 1. Check for null, undefined, or empty strings
+  if (!value) return "N/A"; 
+
+  const date = new Date(value);
+
+  // 2. Check if the parsed date is valid
+  if (isNaN(date.getTime())) return "Invalid Date"; 
+
+  // 3. Return the formatted date safely
+  return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
+};
 
 const statusTone = {
   Draft: "border-slate-200 bg-slate-100 text-slate-700",
@@ -263,6 +274,7 @@ function EmptyState({ onClear }) {
 }
 
 export default function Page() {
+  const [projectList, setProjectList] = useState(() => getWorkflowState().projects);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -271,13 +283,15 @@ export default function Page() {
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => subscribeToWorkflow((state) => setProjectList(state.projects)), []);
+
   const summaryCounts = useMemo(
     () => ({
-      total: PROJECTS.length,
-      highCritical: PROJECTS.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
-      medium: PROJECTS.filter((project) => project.riskCategory === "Medium").length,
-      low: PROJECTS.filter((project) => project.riskCategory === "Low").length,
-      pendingInterventions: PROJECTS.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold"].includes(project.status)).length,
+      total: projectList.length,
+      highCritical: projectList.filter((project) => ["High", "Critical"].includes(project.aiAssessment?.category || project.riskCategory)).length,
+      medium: projectList.filter((project) => (project.aiAssessment?.category || project.riskCategory) === "Medium").length,
+      low: projectList.filter((project) => (project.aiAssessment?.category || project.riskCategory) === "Low").length,
+      pendingInterventions: projectList.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold", "Intervention Required"].includes(project.status)).length,
     }),
     []
   );
@@ -295,7 +309,7 @@ export default function Page() {
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const result = PROJECTS.filter((project) => {
+    const result = projectList.filter((project) => {
       const matchesSearch =
         !normalizedQuery ||
         [project.name, project.projectId, project.district, project.village, project.type]
@@ -305,7 +319,7 @@ export default function Page() {
 
       const matchesStatus = statusFilter === "All" || project.status === statusFilter;
       const matchesType = typeFilter === "All" || project.type === typeFilter;
-      const matchesRisk = riskFilter === "All" || project.riskCategory === riskFilter;
+      const matchesRisk = riskFilter === "All" || (project.aiAssessment?.category || project.riskCategory) === riskFilter;
       const matchesDistrict = districtFilter === "All" || project.district === districtFilter;
 
       return matchesSearch && matchesStatus && matchesType && matchesRisk && matchesDistrict;
@@ -330,7 +344,7 @@ export default function Page() {
     });
 
     return result;
-  }, [districtFilter, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
+  }, [districtFilter, projectList, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
   const pageToRender = Math.min(currentPage, totalPages);
@@ -471,7 +485,7 @@ export default function Page() {
 
           <div className="mt-4 flex flex-col items-start justify-between gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center">
             <p className="text-xs text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{PROJECTS.length}</span> projects
+              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{projectList.length}</span> projects
             </p>
             <button
               type="button"

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { Header } from "@/app/component/layout/index";
-import { PROJECTS } from "../../my-project/projects-data";
+import { PROJECTS } from "../../assigned-projects/projects-data";
 
 const formatDate = (value) =>
   new Intl.DateTimeFormat("en-IN", {
