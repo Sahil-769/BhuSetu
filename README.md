@@ -1,630 +1,293 @@
-# 🏛️ Land Acquisition Intelligence Platform
+# BHOOMI-AI
 
-> **AI-powered predictive analytics system for identifying and preventing delays in land acquisition projects.**
+BHOOMI-AI is a land-acquisition monitoring platform that combines GIS project mapping, acquisition workflow management, and explainable delay-risk prediction.
 
-## 📌 Overview
+## Run The Complete Project
 
-The **Land Acquisition Intelligence Platform** is an AI-powered decision-support system designed to help government officials monitor land acquisition projects and identify projects that are likely to face delays.
+Follow the commands in [commonds.md](commonds.md).
 
-Instead of waiting for a project to become delayed, the system analyzes project data and historical patterns to:
-
-* Predict the probability of delay
-* Assign a risk score to each project
-* Identify the major reasons behind the predicted delay
-* Recommend possible corrective actions
-* Display high-risk projects on a GIS map
-* Generate alerts for critical projects
-* Provide district-wise and state-wise analytics
-
-The main goal is to change land acquisition monitoring from **reactive decision-making to predictive decision-making**.
-
----
-
-## 🎯 Problem Statement
-
-Land acquisition is an important part of infrastructure projects such as:
-
-* Highways
-* Railways
-* Metro projects
-* Airports
-* Other public infrastructure
-
-Projects can be delayed because of:
-
-* Pending approvals
-* Legal disputes
-* Delayed compensation
-* Incomplete documentation
-* Rehabilitation and resettlement issues
-* Delayed possession of land
-* Administrative bottlenecks
-* Stakeholder coordination problems
-
-Currently, authorities may identify many problems only after they have already caused significant delays.
-
-Our system aims to identify these risks **before they become critical**.
-
----
-
-## 💡 Our Solution
-
-The platform follows this workflow:
+Main URLs:
 
 ```text
-Project Data
-     ↓
-Data Processing
-     ↓
-AI/ML Prediction
-     ↓
-Delay Probability
-     ↓
-Risk Classification
-     ↓
-Explainable AI
-     ↓
-Identify Delay Drivers
-     ↓
-Recommendations
-     ↓
-Alerts & Monitoring
+Frontend: http://localhost:3000
+Backend:  http://localhost:8000
+API docs: http://localhost:8000/docs
+Health:   http://localhost:8000/api/health
 ```
 
-For example:
+## GIS Workflow
+
+1. The Project Officer opens **Create Project**.
+2. The officer selects a project location type:
+   - `linear` for highway, railway, metro, or road projects.
+   - `area` for irrigation, industrial, and other area projects.
+3. The officer draws a route or polygon on the Leaflet map.
+4. The frontend converts the drawing into GeoJSON.
+5. The frontend calculates:
+   - Project center latitude and longitude.
+   - Polygon area in hectares.
+   - Route length in kilometers.
+6. The project and geometry are sent to the backend.
+7. LAO, Nodal Officer, and Super Admin view the same project location.
+
+The application uses OpenStreetMap tiles through Leaflet. GIS is used for project planning and review. It does not modify official cadastral boundaries.
+
+## How GIS Information Is Stored
+
+The backend stores project geometry in the `projects.geometry` JSON column.
+
+A point geometry is stored in GeoJSON format:
+
+```json
+{
+  "type": "Point",
+  "coordinates": [77.209, 28.6139]
+}
+```
+
+A drawn area is stored as a GeoJSON polygon:
+
+```json
+{
+  "type": "Polygon",
+  "coordinates": [
+    [
+      [77.20, 28.62],
+      [77.22, 28.62],
+      [77.22, 28.60],
+      [77.20, 28.60],
+      [77.20, 28.62]
+    ]
+  ]
+}
+```
+
+A drawn route is stored as a GeoJSON line string:
+
+```json
+{
+  "type": "LineString",
+  "coordinates": [
+    [77.20, 28.61],
+    [77.24, 28.63]
+  ]
+}
+```
+
+GeoJSON uses `[longitude, latitude]` order. Leaflet displays the same coordinates as `[latitude, longitude]`.
+
+The backend also stores the project center and calculated values through the project payload:
+
+```json
+{
+  "latitude": 28.6139,
+  "longitude": 77.209,
+  "calculatedArea": "125.40",
+  "routeLength": "18.70",
+  "geometryType": "Polygon"
+}
+```
+
+Relevant API endpoints:
 
 ```text
-Project: Highway Expansion
-
-Delay Probability: 87%
-Risk Level: 🔴 Critical
-
-Major Risk Factors:
-1. Legal disputes
-2. Compensation pending
-3. Land possession incomplete
-
-Recommended Actions:
-- Review pending compensation cases
-- Escalate unresolved legal disputes
-- Prioritize possession-related issues
+POST /api/projects
+GET  /api/projects/{id}
+GET  /api/projects/{id}/geometry
+PUT  /api/projects/{id}/acquisition
+PUT  /api/projects/{id}/workflow
 ```
 
----
+## Prediction Workflow
 
-# 🚀 Key Features
+Prediction starts with the project and acquisition data.
 
-## 1. AI-Based Delay Prediction
-
-The system analyzes project information and predicts the probability that a project will experience a delay.
-
-Example:
+The backend prepares features such as:
 
 ```text
-Delay Probability: 87%
-Risk Level: HIGH
-Expected Delay: 126 Days
+project_type
+state
+district
+tehsil
+required_land_area_acres
+gis_available
+legal_status
+ownership_status
+compensation_status
+rr_status
+approval_status
+documents_status
 ```
 
----
-
-## 2. Project Risk Scoring
-
-Every project receives a risk score based on multiple factors.
+The configured XGBoost model is loaded from:
 
 ```text
-0–30%     → Low
-31–60%    → Medium
-61–80%    → High
-81–100%   → Critical
+machine-learning-algo/land_acquisition_xgb_model.pkl
 ```
 
----
-
-## 3. Explainable AI
-
-The system does not only provide a prediction.
-
-It also explains **why** a project is considered risky.
-
-Example:
+The model metadata is loaded from:
 
 ```text
-Legal Disputes       → 31%
-Compensation Pending → 26%
-Possession Delay     → 19%
-Approval Delay       → 14%
-Rehabilitation       → 7%
+machine-learning-algo/model_metadata.json
 ```
 
-SHAP is used to provide explainability for ML predictions.
-
----
-
-## 4. GIS-Based Visualization
-
-Projects are displayed on an interactive map.
-
-Risk levels can be represented using different markers:
+The prediction returns:
 
 ```text
-🟢 Low
-🟡 Medium
-🟠 High
-🔴 Critical
+delay_probability
+risk_category
+top_risk_factors
+factor_importance
+recommendations
+risk_trend
+model_version
+prediction_source
+confidence
 ```
 
-Officials can select a project on the map and view its important information and risk level.
-
----
-
-## 5. Project Monitoring
-
-Officials can monitor:
-
-* Land acquisition progress
-* Compensation progress
-* Approval status
-* Legal disputes
-* Rehabilitation progress
-* Land possession
-* Documentation
-* Project timeline
-
----
-
-## 6. District & State Analytics
-
-The platform provides analytics at different administrative levels.
-
-Examples:
-
-* District-wise project risk
-* State-wise project risk
-* Average project delay
-* Number of high-risk projects
-* Major delay causes
-* Historical delay trends
-
----
-
-## 7. AI/Rule-Based Recommendations
-
-For high-risk projects, the system provides possible actions based on the detected risk factors.
-
-Example:
+Risk categories are calculated as:
 
 ```text
-Risk Factor:
-Compensation pending
-
-Recommendation:
-Prioritize pending compensation cases.
+0-24%   LOW
+25-49%  MEDIUM
+50-74%  HIGH
+75-100% CRITICAL
 ```
 
----
+If the trained model is unavailable, BHOOMI-AI uses an explainable rule-based fallback. The fallback gives weighted importance to issues such as:
 
-## 8. Alerts & Notifications
+```text
+Legal dispute or case pending       20 points
+Ownership verification incomplete   18 points
+Compensation incomplete             18 points
+R&R actions pending                 14 points
+Approval dependency                 12 points
+Documents incomplete                10 points
+```
 
-Officials can receive alerts when:
+The result is never only a score. The system also explains the detected factors and recommends actions.
 
-* A project becomes high risk
-* Risk increases significantly
-* An important milestone is delayed
-* A critical issue remains unresolved
+Prediction endpoints:
 
----
+```text
+POST /api/ai/predict/{project_id}
+GET  /api/ai/assessment/{project_id}
+GET  /api/ai/history/{project_id}
+GET  /api/analytics/risk-distribution
+```
 
-## 9. Role-Based Access Control
+Prediction is recalculated when acquisition data is updated through:
 
-The platform uses role-based access.
+```text
+PUT /api/projects/{project_id}/acquisition
+```
 
-### Super Admin
+## Where Information Is Stored
 
-* Manage users
-* Manage permissions
-* Monitor the complete system
-* View all projects
+### Backend database
 
-### State Officer
+By default, the FastAPI backend uses SQLite:
 
-* Monitor projects within the state
-* View state-level analytics
-* Monitor district performance
+```text
+bhoomi_ai.db
+```
 
-### District Officer
+The database contains the following main records:
 
-* Monitor projects within the district
-* Update project information
-* Handle project alerts
+```text
+projects          Project details, status and GeoJSON geometry
+assessments       Current and previous AI assessment results
+risk_history      Historical prediction changes and changed fields
+interventions    Nodal intervention records
+```
+
+The database URL can be changed with:
+
+```powershell
+$env:DATABASE_URL = "sqlite:///D:/data/bhoomi_ai.db"
+```
+
+### Frontend local demo storage
+
+When the backend is unavailable, the frontend uses browser `localStorage` for demo workflow behavior.
+
+Important keys include:
+
+```text
+bhoomi-ai-workflow-state       Projects, acquisition, interventions and activity
+bhoomi-super-admin-state       Super Admin projects and verification state
+bhoomiUsersData                User records
+bhoomiJurisdictionsData        Jurisdiction records
+bhoomiAdminActivity            Admin audit activity
+```
+
+The frontend fallback is useful for demonstrations, but production data should be stored through the backend API and database.
+
+## Complete Business Workflow
+
+```mermaid
+flowchart TD
+    A[Project Officer creates project] --> B[Draw GIS route or boundary]
+    B --> C[Project and GeoJSON stored]
+    C --> D[LAO reviews parcels and acquisition records]
+    D --> E[AI risk prediction generated or recalculated]
+    E --> F[Nodal Officer monitors risk and interventions]
+    F --> G{Recommend Closure?}
+    G -- No --> F
+    G -- Yes --> H[Closure Recommended / Pending Final Verification]
+    H --> I[Super Admin reviews project]
+    I --> J{Final administrative decision}
+    J -- Verify --> K[Status: Verified and Closed]
+    J -- Send Back --> L[Correction reason recorded]
+    L --> F
+```
 
 ### Project Officer
 
-* Update project progress
-* Upload project information/documents
-* Monitor individual projects
+- Creates the project record.
+- Enters location and land requirement information.
+- Draws the official project planning geometry.
+- Uploads project documents.
+- Submits the project for acquisition review.
 
-All roles use the **same web application**, but their access and available features are different.
+### Land Acquisition Officer
 
----
+- Reviews candidate parcels.
+- Adds or verifies parcel records.
+- Updates ownership, compensation, legal, R&R, approval, document, and possession information.
+- Submits acquisition updates.
+- These changes can trigger a new AI prediction.
 
-# 🏗️ System Architecture
+### AI Prediction Service
 
-```text
-                     ┌─────────────────────┐
-                     │      Next.js        │
-                     │   Web Application   │
-                     └──────────┬──────────┘
-                                │
-                                ↓
-                     ┌─────────────────────┐
-                     │      FastAPI        │
-                     │      Backend        │
-                     └──────────┬──────────┘
-                                │
-             ┌──────────────────┼──────────────────┐
-             ↓                  ↓                  ↓
-      ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-      │ PostgreSQL   │   │   ML Engine  │   │    Redis     │
-      │  + PostGIS   │   │ XGBoost/SHAP │   │    Cache     │
-      └──────────────┘   └──────────────┘   └──────────────┘
-                                │
-                                ↓
-                       ┌─────────────────┐
-                       │ Risk Prediction │
-                       └─────────────────┘
-```
+- Reads project, GIS, and acquisition features.
+- Calculates delay probability.
+- Assigns a risk category.
+- Explains the main risk factors.
+- Provides recommended next actions.
+- Stores assessment history.
 
----
+### Nodal Officer
 
-# 🛠️ Technology Stack
+- Reviews project progress and AI risk.
+- Records interventions and monitoring decisions.
+- Tracks pending and resolved actions.
+- Selects **Recommend Closure** when monitoring is complete.
+- The project moves to `Closure Recommended / Pending Final Verification`.
 
-## Frontend
+### Super Admin
 
-* Next.js
-* TypeScript
-* Tailwind CSS
-* Recharts
-* React-Leaflet
+- Reviews the complete project folder.
+- Reviews project information, acquisition summary, GIS, AI risk, interventions, documents, and activity history.
+- Does not edit AI scores, verify parcels, or change legal/acquisition decisions.
+- Selects one final action:
+  - **Verify Project**: status becomes `Verified` and the project is closed/read-only.
+  - **Back to Correction**: a reason is required and the project returns to Nodal Officer review.
 
-## Backend
+## Judge-Friendly Explanation
 
-* Python
-* FastAPI
-* REST APIs
+> BHOOMI-AI connects the physical location of a land project with its administrative acquisition data. The Project Officer draws the route or boundary, the system stores it as GeoJSON, and the LAO records parcel and acquisition progress. The AI evaluates legal, ownership, compensation, R&R, approval, document, and GIS factors to predict delay risk with explanations and recommendations. The Nodal Officer monitors and recommends closure, while the Super Admin performs the final administrative verification or sends the project back for correction.
 
-## Machine Learning
+## Important Data Integrity Rule
 
-* Python
-* Pandas
-* NumPy
-* Scikit-learn
-* XGBoost
-* SHAP
-
-## Database
-
-* PostgreSQL
-* PostGIS
-
-## Additional Technologies
-
-* Redis
-* JWT Authentication
-* Role-Based Access Control
-* Docker
-* Git & GitHub
-
-## Maps
-
-* OpenStreetMap
-* Leaflet
-* PostGIS
-
----
-
-# 📊 Machine Learning Pipeline
-
-```text
-Historical Project Data
-          ↓
-    Data Cleaning
-          ↓
-   Feature Engineering
-          ↓
-    Train/Test Split
-          ↓
-    ML Model Training
-          ↓
-      XGBoost
-          ↓
-    Model Evaluation
-          ↓
-       SHAP
-          ↓
-   Explain Predictions
-          ↓
-   Deploy Prediction API
-```
-
-### Possible Input Features
-
-* Project type
-* Land area
-* Number of affected families
-* Compensation percentage
-* Approval status
-* Number of legal disputes
-* Documentation status
-* Rehabilitation progress
-* Possession status
-* Stakeholder responsiveness
-* Historical district performance
-* Project timeline
-
-### Model Outputs
-
-```text
-Delay Probability
-        +
-Risk Category
-        +
-Expected Delay
-        +
-Major Risk Factors
-```
-
----
-
-# 🗂️ Project Structure
-
-```text
-land-acquisition-intelligence/
-│
-├── frontend/
-│   ├── app/
-│   ├── components/
-│   ├── services/
-│   ├── hooks/
-│   └── public/
-│
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── services/
-│   │   └── main.py
-│   │
-│   └── requirements.txt
-│
-├── ml/
-│   ├── data/
-│   ├── notebooks/
-│   ├── models/
-│   ├── preprocessing/
-│   ├── training/
-│   └── prediction/
-│
-├── database/
-│   ├── migrations/
-│   └── seed/
-│
-├── docs/
-│
-├── docker-compose.yml
-├── .env.example
-└── README.md
-```
-
----
-
-# 🔄 Application Workflow
-
-### Step 1 — Project Data
-
-Project information is entered or received through the system.
-
-### Step 2 — Data Processing
-
-The backend validates and processes the information.
-
-### Step 3 — AI Prediction
-
-The ML model analyzes the project.
-
-### Step 4 — Risk Calculation
-
-The system generates a delay probability and risk category.
-
-### Step 5 — Explanation
-
-SHAP identifies the factors contributing most to the prediction.
-
-### Step 6 — Recommendation
-
-The system suggests possible corrective actions.
-
-### Step 7 — Visualization
-
-The project appears on the dashboard and GIS map.
-
-### Step 8 — Alert
-
-If the project reaches a critical risk level, the responsible officer can receive an alert.
-
-### Step 9 — Monitoring
-
-Officials continue updating the project, allowing the system to track changes over time.
-
----
-
-# 🔐 Security
-
-The platform is designed with:
-
-* JWT authentication
-* Role-Based Access Control
-* Secure API endpoints
-* Password protection
-* Data validation
-* Audit logs
-* Protected administrative operations
-
----
-
-# 📈 Future Improvements
-
-Possible future improvements include:
-
-* Integration with real government databases
-* Automated model retraining
-* Advanced NLP for legal documents
-* OCR-based document extraction
-* SMS notifications
-* Advanced satellite/geospatial analysis
-* More sophisticated delay forecasting
-* Mobile application
-* Large-scale cloud deployment
-
----
-
-# ⚠️ Data Disclaimer
-
-For development and demonstration purposes, the project may use **synthetic or publicly available datasets** when real government land-acquisition data is not available.
-
-Synthetic data should not be presented as actual government data.
-
----
-
-# 🎯 Project Goal
-
-The ultimate goal of the platform is:
-
-> **Predict problems before they become delays, explain the risks clearly, and help officials take timely action.**
-
-```text
-             MONITOR
-                ↓
-             PREDICT
-                ↓
-             EXPLAIN
-                ↓
-           RECOMMEND
-                ↓
-              ALERT
-                ↓
-              ACT
-                ↓
-            MONITOR
-```
-
----
-
-# ▶️ Run and Verify the Current Prototype
-
-The repository currently contains a working FastAPI integration for project persistence, the existing XGBoost model, AI assessments, risk history, acquisition updates, interventions, and risk-distribution analytics. The frontend is a Next.js application.
-
-## 1. Start the backend
-
-Open PowerShell in the repository root:
-
-```powershell
-cd backend
-python -m pip install -r requirements.txt
-$env:PYTHONPATH = "."
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-The backend uses SQLite by default and creates `bhoomi_ai.db` on first start. The existing model is loaded from `machine-learning-algo/land_acquisition_xgb_model.pkl` through the paths in [backend/.env.example](backend/.env.example). Copy those values into your environment if you need custom paths or a PostgreSQL database.
-
-Check the service at:
-
-- API health: http://localhost:8000/api/health
-- Interactive API docs: http://localhost:8000/docs
-
-The health response should report `model_loaded: true` and `prediction_source: ML_MODEL`. If the model cannot load, the API remains available and marks predictions as `RULE_BASED_FALLBACK`.
-
-## 2. Start the frontend
-
-Open a second PowerShell window:
-
-```powershell
-cd frontend
-npm install
-$env:NEXT_PUBLIC_API_URL = "http://localhost:8000"
-npm run dev
-```
-
-Open http://localhost:3000 and select **Project Officer**. The implemented create-project flow sends the project to the FastAPI backend. If the backend is offline, it displays a warning and retains the existing local demo-store behavior.
-
-## 3. Verify the implemented API flow
-
-With the backend running, use PowerShell:
-
-```powershell
-$project = Invoke-RestMethod http://localhost:8000/api/projects -Method Post `
-     -ContentType "application/json" `
-     -Body (@{
-          projectId = "DEMO-2026-001"
-          projectName = "Demo Highway"
-          projectType = "Highway"
-          state = "Delhi"
-          district = "Delhi"
-          village = "Demo Village"
-          tehsil = "Demo Tehsil"
-          requiredLandArea = 12.5
-          latitude = 28.6139
-          longitude = 77.2090
-     } | ConvertTo-Json)
-
-Invoke-RestMethod "http://localhost:8000/api/ai/predict/$($project.id)" -Method Post
-Invoke-RestMethod "http://localhost:8000/api/ai/history/$($project.id)"
-```
-
-To verify dynamic recalculation, update acquisition data:
-
-```powershell
-Invoke-RestMethod "http://localhost:8000/api/projects/$($project.id)/acquisition" -Method Put `
-     -ContentType "application/json" `
-     -Body (@{
-          compensation_status = "Paid"
-          legal_status = "Resolved"
-          ownership_status = "Verified"
-          rr_status = "Completed"
-          approval_status = "Approved"
-          documents_status = "Complete"
-     } | ConvertTo-Json)
-```
-
-This creates a new assessment and risk-history record with the changed fields and a trend such as `DECREASING`.
-
-## Current limitations
-
-- The default database is SQLite for easy local demonstration; PostgreSQL/PostGIS wiring is not finished.
-- Existing role pages still primarily use browser demo state; the complete LAO, Nodal Officer, and Admin UI integration is pending.
-- Create Project now uses a real Leaflet Draw editor for polygon and polyline geometry, including edit/delete controls, coordinate capture, and approximate area/route measurements. Parcel intersection is not yet wired to the saved geometry.
-- The model produces real probability values, but confidence is omitted because the artifact does not expose a validated confidence measure.
-
----
-
-## 👥 Team
-
-**Project:** Land Acquisition Intelligence Platform
-
-**Developed for:** Smart India Hackathon (SIH)
-
-**Team Members:**
-
-* SAHIL
-* ALI
-* KHALID
-* ANKITA
-* SAQIB
-* FAHAD
-
----
-
-## 📄 License
-
-This project is developed as part of a Smart India Hackathon project and is intended for educational, research, and demonstration purposes.
+GIS overlays shown in the interface are planning and review visualizations. They do not replace or modify official cadastral records. Official land records remain the source of legal truth.

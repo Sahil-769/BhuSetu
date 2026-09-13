@@ -20,6 +20,7 @@ export const api = {
   createProject: (project) => request("/api/projects", { method: "POST", body: JSON.stringify(project) }),
   getProject: (id) => request(`/api/projects/${id}`),
   getGeometry: (id) => request(`/api/projects/${id}/geometry`),
+  updateProjectWorkflow: (id, data) => request(`/api/projects/${id}/workflow`, { method: "PUT", body: JSON.stringify(data) }),
   updateAcquisition: (id, data) => request(`/api/projects/${id}/acquisition`, { method: "PUT", body: JSON.stringify(data) }),
   predict: (id) => request(`/api/ai/predict/${id}`, { method: "POST" }),
   getAssessment: (id) => request(`/api/ai/assessment/${id}`),

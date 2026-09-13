@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   AlertTriangle,
@@ -31,6 +31,8 @@ import {
 import { Header } from "@/app/component/layout/index";
 import { PROJECTS, projectTypeMeta } from "../../../project-officer/my-project/projects-data";
 import { getWorkflowState, subscribeToWorkflow, updateWorkflowProject } from "../../../../../components/workflowStore";
+import { addAuditLog, updateSuperAdminState } from "../../../super-admin/superAdminStore";
+import NodalGISPanel from "./NodalGISPanel";
 
 const formatDate = (value) => {
   // 1. Check for null, undefined, or empty strings
@@ -141,6 +143,7 @@ export default function ProjectDetailPage() {
     status: "Open",
   });
   const [history, setHistory] = useState(defaultDecisionHistory);
+  const submissionInProgress = useRef(false);
 
   const projectId = params?.id ?? "";
   const project = workflow.projects.find((item) => String(item.id) === String(projectId)) || PROJECTS.find((item) => String(item.id) === String(projectId));
@@ -270,19 +273,31 @@ export default function ProjectDetailPage() {
   };
 
   const submitToSuperAdmin = () => {
+    if (project.nodalReviewCompleted || submissionInProgress.current) return;
+    submissionInProgress.current = true;
+
     const submittedAt = new Date().toISOString();
-    updateSuperAdminState((current) => addAuditLog(current, "Project submitted to Super Admin", project.name, "Workflow", (next) => ({
-      ...next,
-      projects: next.projects.map((item) => item.id === project.id ? {
-        ...item,
-        status: "Completed",
-        workflowStatus: "Completed",
-        nodalReviewCompleted: true,
-        submittedAt,
-        submittedBy: "Sahil Alvi",
-        workflowActivity: [{ id: `workflow-${Date.now()}`, action: "Submitted to Super Admin", actor: "Sahil Alvi", role: "Nodal Officer", timestamp: submittedAt, status: "Completed" }, ...(item.workflowActivity || [])],
-      } : item),
-    })));
+    const workflowActivity = { id: `workflow-${Date.now()}`, action: "Submitted to Super Admin", actor: "Sahil Alvi", role: "Nodal Officer", timestamp: submittedAt, status: "Completed" };
+    const submittedProject = (item) => ({
+      ...item,
+      status: "Closure Recommended / Pending Final Verification",
+      workflowStatus: "Closure Recommended / Pending Final Verification",
+      nodalReviewCompleted: true,
+      submittedAt,
+      submittedBy: "Sahil Alvi",
+      workflowActivity: [workflowActivity, ...(item.workflowActivity || []).filter((activity) => activity.action !== "Submitted to Super Admin")],
+    });
+
+    updateWorkflowProject(project.id, submittedProject, "Project submitted to Super Admin");
+    updateSuperAdminState((current) => addAuditLog(current, "Project submitted to Super Admin", project.name, "Workflow", (next) => {
+      const exists = next.projects.some((item) => String(item.id) === String(project.id));
+      return {
+        ...next,
+        projects: exists
+          ? next.projects.map((item) => String(item.id) === String(project.id) ? submittedProject(item) : item)
+          : [...next.projects, submittedProject(project)],
+      };
+    }));
   };
 
   return (
@@ -572,10 +587,10 @@ export default function ProjectDetailPage() {
             <button
               type="button"
               onClick={submitToSuperAdmin}
-              disabled={project.nodalReviewCompleted}
+              disabled={project.nodalReviewCompleted || submissionInProgress.current}
               className="mt-3 inline-flex items-center gap-2 rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-              {project.nodalReviewCompleted ? "Submitted to Super Admin" : "Submit to Super Admin"}
+              {project.nodalReviewCompleted ? "Closure Recommended" : "Recommend Closure"}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -633,14 +648,8 @@ export default function ProjectDetailPage() {
               GIS view
             </p>
 
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white text-center text-slate-500">
-                <div>
-                  <MapPinned className="mx-auto h-7 w-7 text-slate-400" />
-                  <p className="mt-3 text-sm font-medium text-slate-600">Parcel / route map view</p>
-                  <p className="mt-1 text-xs text-slate-500">Available where authorized</p>
-                </div>
-              </div>
+            <div className="mt-4">
+              <NodalGISPanel project={project} />
             </div>
           </div>
         </section>

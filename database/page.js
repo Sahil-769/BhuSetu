@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Eye, FolderKanban, MapPin, Search, ShieldAlert, X } from "lucide-react";
-import { Header } from "../../../component/layout";
-import { PROJECTS } from "../../LandAcqOfficer/assigned-projects/projects-data";
-import { getWorkflowState, subscribeToWorkflow } from "../../../../components/workflowStore";
+import { Header } from "../frontend/app/component/layout";
+import { PROJECTS } from "../frontend/app/roles/LandAcqOfficer/assigned-projects/projects-data";
+import { getWorkflowState, subscribeToWorkflow } from "../frontend/components/workflowStore";
 
 const statusStyles = {
   "Under Acquisition": "bg-sky-50 text-sky-700",

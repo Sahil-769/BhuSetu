@@ -97,16 +97,16 @@ export default function CreateProjectPage() {
   const [submitState, setSubmitState] = useState({ loading: false, error: "" });
 
   const [formData, setFormData] = useState({
-    projectId: "",
-    projectName: "",
-    projectType: "",
-    description: "",
-    department: "",
+    projectId: "BH-2026-AUTO",
+    projectName: "Delhi-Meerut Highway Expansion",
+    projectType: "Highway",
+    description: "Highway corridor expansion to improve regional access, freight movement, and road safety across the connected villages.",
+    department: "NHAI",
 
     state: "Delhi",
     district: "Delhi",
-    tehsil: "",
-    villages: "",
+    tehsil: "New Delhi",
+    villages: "Baprola, Najafgarh",
 
     locationType: "linear",
     latitude: "",
@@ -116,10 +116,10 @@ export default function CreateProjectPage() {
     geometry: null,
     geometryType: "",
 
-    requiredLandArea: "",
+    requiredLandArea: "125",
     unit: "Hectare",
-    acquisitionRequirement: "",
-    purpose: "",
+    acquisitionRequirement: "Land acquisition for highway widening, service roads, drainage, and safety infrastructure.",
+    purpose: "Improve regional connectivity and reduce congestion through a safer expanded highway corridor.",
   });
 
   const [documents, setDocuments] = useState([]);

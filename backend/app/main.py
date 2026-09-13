@@ -119,6 +119,17 @@ class InterventionIn(BaseModel):
     remarks: str | None = None
 
 
+class WorkflowIn(BaseModel):
+    status: str = Field(min_length=1)
+    workflowStatus: str | None = None
+    nodalReviewCompleted: bool | None = None
+    submittedAt: str | None = None
+    submittedBy: str | None = None
+    correctionReason: str | None = None
+    verification: dict | None = None
+    workflowActivity: list[dict] | None = None
+
+
 def db():
     session = SessionLocal()
     try:
@@ -128,7 +139,8 @@ def db():
 
 
 def serialize_project(project: Project) -> dict:
-    return {"id": project.id, "projectId": project.project_id, "name": project.name, "type": project.type, "state": project.state, "district": project.district, "village": project.village, "tehsil": project.tehsil, "requiredLandArea": project.required_land_area, "geometry": project.geometry, "status": project.status, "riskProbability": project.risk_probability, "riskCategory": project.risk_category, "createdAt": project.created_at.isoformat(), "updatedAt": project.updated_at.isoformat()}
+    workflow = (project.acquisition_data or {}).get("workflow", {})
+    return {"id": project.id, "projectId": project.project_id, "name": project.name, "type": project.type, "state": project.state, "district": project.district, "village": project.village, "tehsil": project.tehsil, "requiredLandArea": project.required_land_area, "geometry": project.geometry, "status": project.status, "workflowStatus": workflow.get("workflowStatus", project.status), "nodalReviewCompleted": workflow.get("nodalReviewCompleted", False), "submittedAt": workflow.get("submittedAt"), "submittedBy": workflow.get("submittedBy"), "correctionReason": workflow.get("correctionReason"), "verification": workflow.get("verification"), "workflowActivity": workflow.get("workflowActivity", []), "riskProbability": project.risk_probability, "riskCategory": project.risk_category, "createdAt": project.created_at.isoformat(), "updatedAt": project.updated_at.isoformat()}
 
 
 app = FastAPI(title="BHOOMI-AI API", version="1.0.0", docs_url="/docs", openapi_url="/api/openapi.json")
@@ -178,6 +190,22 @@ def get_geometry(project_id: int, session: Session = Depends(db)):
     project = session.get(Project, project_id)
     if not project: raise HTTPException(404, "Project not found")
     return {"geometry": project.geometry, "gis_available": project.geometry is not None, "label": "Demo GIS data"}
+
+
+@app.put("/api/projects/{project_id}/workflow")
+def update_project_workflow(project_id: int, payload: WorkflowIn, session: Session = Depends(db)):
+    project = session.get(Project, project_id)
+    if not project:
+        raise HTTPException(404, "Project not found")
+    current_data = project.acquisition_data or {}
+    current_workflow = current_data.get("workflow", {})
+    next_workflow = {**current_workflow, **payload.model_dump(exclude_none=True)}
+    project.acquisition_data = {**current_data, "workflow": next_workflow}
+    project.status = payload.status
+    project.updated_at = datetime.now(timezone.utc)
+    session.commit()
+    session.refresh(project)
+    return serialize_project(project)
 
 
 @app.put("/api/projects/{project_id}/acquisition")
