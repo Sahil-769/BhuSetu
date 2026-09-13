@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -27,6 +27,7 @@ import {
   riskOptions,
   statusOptions,
 } from "../../project-officer/my-project/projects-data";
+import { getSuperAdminState, subscribeToSuperAdminState } from "../../super-admin/superAdminStore";
 
 const PAGE_SIZE = 6;
 
@@ -43,6 +44,9 @@ const statusTone = {
   "Under Acquisition": "border-sky-200 bg-sky-50 text-sky-700",
   "On Hold": "border-stone-200 bg-stone-100 text-stone-700",
   Completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "Submitted to Super Admin": "border-sky-200 bg-sky-50 text-sky-700",
+  Verified: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "Sent Back for Correction": "border-amber-200 bg-amber-50 text-amber-700",
 };
 
 const riskTone = {
@@ -263,6 +267,7 @@ function EmptyState({ onClear }) {
 }
 
 export default function Page() {
+  const [projects, setProjects] = useState(() => getSuperAdminState().projects);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -271,15 +276,17 @@ export default function Page() {
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => subscribeToSuperAdminState((state) => setProjects(state.projects)), []);
+
   const summaryCounts = useMemo(
     () => ({
-      total: PROJECTS.length,
-      highCritical: PROJECTS.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
-      medium: PROJECTS.filter((project) => project.riskCategory === "Medium").length,
-      low: PROJECTS.filter((project) => project.riskCategory === "Low").length,
-      pendingInterventions: PROJECTS.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold"].includes(project.status)).length,
+      total: projects.length,
+      highCritical: projects.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
+      medium: projects.filter((project) => project.riskCategory === "Medium").length,
+      low: projects.filter((project) => project.riskCategory === "Low").length,
+      pendingInterventions: projects.filter((project) => ["Under Acquisition", "Pending LAO Verification", "On Hold"].includes(project.status)).length,
     }),
-    []
+    [projects]
   );
 
   const clearFilters = () => {
@@ -295,7 +302,7 @@ export default function Page() {
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const result = PROJECTS.filter((project) => {
+    const result = projects.filter((project) => {
       const matchesSearch =
         !normalizedQuery ||
         [project.name, project.projectId, project.district, project.village, project.type]
@@ -330,7 +337,7 @@ export default function Page() {
     });
 
     return result;
-  }, [districtFilter, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
+  }, [districtFilter, projects, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
   const pageToRender = Math.min(currentPage, totalPages);
@@ -436,7 +443,7 @@ export default function Page() {
 
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
-              <FilterSelect label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} options={statusOptions} />
+              <FilterSelect label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} options={[...statusOptions, "Submitted to Super Admin", "Verified", "Sent Back for Correction"]} />
             </div>
             <div className="w-full sm:w-1/2 md:w-1/3 xl:w-1/6">
               <FilterSelect label="Project Type" value={typeFilter} onChange={(value) => { setTypeFilter(value); setCurrentPage(1); }} options={projectTypeOptions} />
@@ -471,7 +478,7 @@ export default function Page() {
 
           <div className="mt-4 flex flex-col items-start justify-between gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center">
             <p className="text-xs text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{PROJECTS.length}</span> projects
+              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{projects.length}</span> projects
             </p>
             <button
               type="button"

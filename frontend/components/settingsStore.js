@@ -19,6 +19,8 @@ const roleSettings = {
   nodal_officer: { ...DEFAULT_SETTINGS },
   "system-admin": { ...DEFAULT_SETTINGS },
   system_admin: { ...DEFAULT_SETTINGS },
+  "super-admin": { ...DEFAULT_SETTINGS },
+  super_admin: { ...DEFAULT_SETTINGS },
 };
 
 const listeners = new Map();
@@ -30,6 +32,7 @@ const normalizeRoleKey = (role) => {
   if (value.includes("project")) return "project_officer";
   if (value.includes("land") || value.includes("acquisition")) return "land_acquisition_officer";
   if (value.includes("nodal")) return "nodal_officer";
+  if (value.includes("super")) return "super_admin";
   if (value.includes("admin") || value.includes("system")) return "system_admin";
 
   return "project_officer";

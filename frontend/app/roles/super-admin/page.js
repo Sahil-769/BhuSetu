@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import HomesPage from "./dashboard/page";
+import SuperAdminModule from "./SuperAdminModule";
+
 export default function Page() {
-  return <HomesPage />;
+  return <SuperAdminModule section="dashboard" />;
 }
