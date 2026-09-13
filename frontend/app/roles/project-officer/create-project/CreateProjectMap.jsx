@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { EditControl } from "react-leaflet-draw";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { FeatureGroup, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 
@@ -81,21 +81,23 @@ export default function CreateProjectMap({ isLinear, onGeometryChange }) {
       <MapContainer center={[center.latitude, center.longitude]} zoom={11} scrollWheelZoom className="h-full w-full" attributionControl>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
         <RecenterMap center={center} />
-        <EditControl
-          position="topleft"
-          onCreated={(event) => updateGeometry(event.layer)}
-          onEdited={(event) => event.layers.eachLayer(updateGeometry)}
-          onDeleted={clearGeometry}
-          draw={{
-            rectangle: false,
-            circle: false,
-            circlemarker: false,
-            marker: false,
-            polygon: !isLinear,
-            polyline: isLinear,
-          }}
-          edit={{ remove: true }}
-        />
+        <FeatureGroup>
+          <EditControl
+            position="topleft"
+            onCreated={(event) => updateGeometry(event.layer)}
+            onEdited={(event) => event.layers.eachLayer(updateGeometry)}
+            onDeleted={clearGeometry}
+            draw={{
+              rectangle: false,
+              circle: false,
+              circlemarker: false,
+              marker: false,
+              polygon: !isLinear,
+              polyline: isLinear,
+            }}
+            edit={{ remove: true }}
+          />
+        </FeatureGroup>
       </MapContainer>
       <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-lg bg-white/95 px-3 py-2 text-xs text-slate-700 shadow">
         {isLinear ? "Draw a route, then use the edit or delete controls." : "Draw a boundary, then use the edit or delete controls."}
