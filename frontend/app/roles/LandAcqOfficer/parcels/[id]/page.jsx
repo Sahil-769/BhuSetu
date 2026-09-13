@@ -1,17 +1,49 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  ArrowRight,
   Map,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
+  Plus,
 } from "lucide-react";
 
 export default function ParcelVerification({ params }) {
   const { id } = React.use(params);
+  const storageKey = `bhoomi-parcels:${id}`;
+  const [parcels, setParcels] = useState([]);
+  const [form, setForm] = useState({
+    parcelId: "",
+    surveyNumber: "",
+    village: "",
+    tehsil: "",
+    district: "",
+    state: "",
+    totalArea: "",
+    acquisitionArea: "",
+    landUseType: "",
+  });
+
+  useEffect(() => {
+    const savedParcels = window.localStorage.getItem(storageKey);
+    if (savedParcels) setParcels(JSON.parse(savedParcels));
+  }, [storageKey]);
+
+  const updateForm = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const addParcel = (event) => {
+    event.preventDefault();
+    const updatedParcels = [...parcels, { ...form, status: "Pending Verification" }];
+    setParcels(updatedParcels);
+    window.localStorage.setItem(storageKey, JSON.stringify(updatedParcels));
+    setForm({
+      parcelId: "", surveyNumber: "", village: "", tehsil: "", district: "",
+      state: "", totalArea: "", acquisitionArea: "", landUseType: "",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -44,7 +76,7 @@ export default function ParcelVerification({ params }) {
               </h1>
 
               <p className="text-sm text-slate-500">
-                Verify parcels submitted by the Project Officer
+                Add parcel information and verify each parcel for this project
               </p>
             </div>
 
@@ -60,101 +92,67 @@ export default function ParcelVerification({ params }) {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Review the land parcels associated with this project.
+              Add the land details shown in the parcel records and verify them individually.
             </p>
           </div>
 
-          {/* Example Parcel */}
-          <div className="p-6">
-
-            <div className="rounded-xl border border-slate-200 p-5">
-
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Parcel ID
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    P-001
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Survey Number
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    123/1
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Land Area
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    2.45 Hectares
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Land Owner
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    Rajesh Kumar
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Village
-                  </p>
-
-                  <p className="mt-1 font-semibold">
-                    Modinagar
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Status
-                  </p>
-
-                  <span className="mt-1 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                    Pending Verification
-                  </span>
-                </div>
-
+          <div className="space-y-6 p-6">
+            <form onSubmit={addParcel} className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {[
+                  ["parcelId", "Parcel ID"], ["surveyNumber", "Khasra / Survey Number"],
+                  ["village", "Village"], ["tehsil", "Tehsil"], ["district", "District"],
+                  ["state", "State"], ["totalArea", "Total Parcel Area"],
+                  ["acquisitionArea", "Required Acquisition Area"], ["landUseType", "Land Use Type"],
+                ].map(([field, label]) => (
+                  <label key={field} className="text-sm font-medium text-slate-700">
+                    {label}
+                    <input
+                      required
+                      type={field.includes("Area") ? "number" : "text"}
+                      step={field.includes("Area") ? "0.01" : undefined}
+                      value={form[field]}
+                      onChange={(event) => updateForm(field, event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </label>
+                ))}
               </div>
+              <button type="submit" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700">
+                <Plus className="h-5 w-5" />
+                Add Parcel
+              </button>
+            </form>
 
-              {/* Actions */}
-              <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-200 pt-5">
-
-                <button className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Verify Parcel
-                </button>
-
-                <button className="flex items-center gap-2 rounded-xl bg-red-50 px-5 py-3 font-semibold text-red-600 hover:bg-red-100">
-                  <XCircle className="h-5 w-5" />
-                  Reject Parcel
-                </button>
-
-                <button className="flex items-center gap-2 rounded-xl bg-amber-50 px-5 py-3 font-semibold text-amber-700 hover:bg-amber-100">
-                  <AlertTriangle className="h-5 w-5" />
-                  Raise Issue
-                </button>
-
+            {parcels.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">No parcels added yet.</p>
+            ) : parcels.map((parcel, index) => (
+              <div key={`${parcel.parcelId}-${index}`} className="rounded-xl border border-slate-200 p-5">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    ["Parcel ID", parcel.parcelId], ["Khasra / Survey Number", parcel.surveyNumber],
+                    ["Village", parcel.village], ["Tehsil", parcel.tehsil], ["District", parcel.district],
+                    ["State", parcel.state], ["Total Parcel Area", parcel.totalArea],
+                    ["Required Acquisition Area", parcel.acquisitionArea], ["Land Use Type", parcel.landUseType],
+                  ].map(([label, value]) => (
+                    <div key={label}><p className="text-sm text-slate-500">{label}</p><p className="mt-1 font-semibold text-slate-900">{value}</p></div>
+                  ))}
+                  <div>
+                    <p className="text-sm text-slate-500">Parcel Verification Status</p>
+                    <span className={`mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold ${parcel.status === "Submitted" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{parcel.status}</span>
+                  </div>
+                </div>
+                <div className="mt-6 border-t border-slate-200 pt-5">
+                  <Link
+                    href={`/roles/LandAcqOfficer/acquisition-cases?parcelId=${encodeURIComponent(parcel.parcelId)}`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-700"
+                  >
+                    Verify Parcel
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                </div>
               </div>
-
-            </div>
-
+            ))}
           </div>
 
         </div>

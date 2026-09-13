@@ -7,7 +7,7 @@ import { ArrowLeft, Layers3, MapPinned, Ruler, ShieldCheck } from "lucide-react"
 import Link from "next/link";
 import "leaflet/dist/leaflet.css";
 import { Header } from "../../../component/layout";
-import { PROJECTS } from "../my-project/projects-data";
+import { PROJECTS } from "../assigned-projects/projects-data";
 
 const getProjectShape = (project) => {
   const latitude = Number(project.coordinates?.latitude ?? 20.5937);

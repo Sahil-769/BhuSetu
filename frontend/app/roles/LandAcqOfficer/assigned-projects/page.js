@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -26,15 +26,26 @@ import {
   riskOptions,
   statusOptions,
 } from "./projects-data";
+import { getWorkflowState, subscribeToWorkflow } from "../../../../components/workflowStore";
 
 const PAGE_SIZE = 6;
 
-const formatDate = (value) =>
-  new Intl.DateTimeFormat("en-IN", {
+const formatDate = (value) => {
+  // 1. Check for null, undefined, or empty strings
+  if (!value) return "N/A"; 
+
+  const date = new Date(value);
+
+  // 2. Check if the parsed date is valid
+  if (isNaN(date.getTime())) return "Invalid Date"; 
+
+  // 3. Return the formatted date safely
+  return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
+};
 
 const statusTone = {
   Draft: "border-slate-200 bg-slate-100 text-slate-700",
@@ -181,7 +192,7 @@ function ProjectCard({ project }) {
           Type: <span className="font-semibold text-slate-700">{project.type}</span>
         </div>
         <Link
-          href={`/roles/LandAcqOfficer/my-project/${project.id}`}
+          href={`/roles/LandAcqOfficer/assigned-projects/${project.id}`}
           className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
           aria-label={`View details for ${project.name}`}
         >
@@ -214,6 +225,7 @@ function EmptyState({ onClear }) {
 }
 
 export default function Page() {
+  const [projectList, setProjectList] = useState(() => getWorkflowState().projects);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -222,14 +234,16 @@ export default function Page() {
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => subscribeToWorkflow((state) => setProjectList(state.projects)), []);
+
   const summaryCounts = useMemo(
     () => ({
-      total: PROJECTS.length,
-      active: PROJECTS.filter((project) => ["Pending LAO Verification", "Under Acquisition", "On Hold"].includes(project.status)).length,
-      underAcquisition: PROJECTS.filter((project) => project.status === "Under Acquisition").length,
-      highRisk: PROJECTS.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
+      total: projectList.length,
+      active: projectList.filter((project) => ["Pending LAO Verification", "Under Acquisition", "On Hold"].includes(project.status)).length,
+      underAcquisition: projectList.filter((project) => project.status === "Under Acquisition").length,
+      highRisk: projectList.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
     }),
-    []
+    [projectList]
   );
 
   const clearFilters = () => {
@@ -245,7 +259,7 @@ export default function Page() {
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const result = PROJECTS.filter((project) => {
+    const result = projectList.filter((project) => {
       const matchesSearch =
         !normalizedQuery ||
         [
@@ -286,7 +300,7 @@ export default function Page() {
     });
 
     return result;
-  }, [districtFilter, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
+  }, [districtFilter, projectList, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
   const pageToRender = Math.min(currentPage, totalPages);
@@ -416,7 +430,7 @@ export default function Page() {
 
           <div className="mt-4 flex flex-col items-start justify-between gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center">
             <p className="text-xs text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{PROJECTS.length}</span> projects
+              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{projectList.length}</span> projects
             </p>
             <button
               type="button"

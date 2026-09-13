@@ -16,7 +16,7 @@ import {
   Send,
 } from "lucide-react";
 import { Header } from "../../../../../component/layout";
-import { PROJECTS } from "../../../my-project/projects-data";
+import { PROJECTS } from "../../../assigned-projects/projects-data";
 
 const checks = [
   { id: "project", label: "Verify Project Information", description: "Confirm project identity, agency, location, and scope.", icon: FileText },

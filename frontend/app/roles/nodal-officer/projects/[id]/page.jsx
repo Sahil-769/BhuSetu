@@ -30,14 +30,24 @@ import {
 
 import { Header } from "@/app/component/layout/index";
 import { PROJECTS, projectTypeMeta } from "../../../project-officer/my-project/projects-data";
-import { addAuditLog, getSuperAdminState, subscribeToSuperAdminState, updateSuperAdminState } from "../../../super-admin/superAdminStore";
+import { getWorkflowState, subscribeToWorkflow, updateWorkflowProject } from "../../../../../components/workflowStore";
 
-const formatDate = (value) =>
-  new Intl.DateTimeFormat("en-IN", {
+const formatDate = (value) => {
+  // 1. Check for null, undefined, or empty strings
+  if (!value) return "N/A"; 
+
+  const date = new Date(value);
+
+  // 2. Check if the parsed date is valid
+  if (isNaN(date.getTime())) return "Invalid Date"; 
+
+  // 3. Return the formatted date safely
+  return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
+};
 
 const formatDateTime = (value) =>
   new Intl.DateTimeFormat("en-IN", {
@@ -120,7 +130,7 @@ const defaultDecisionHistory = [
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const [sharedProject, setSharedProject] = useState(null);
+  const [workflow, setWorkflow] = useState(() => getWorkflowState());
   const [form, setForm] = useState({
     decision: "Intervention Required",
     priority: "High",
@@ -132,18 +142,10 @@ export default function ProjectDetailPage() {
   });
   const [history, setHistory] = useState(defaultDecisionHistory);
 
-  const projectId = Number(params?.id ?? 0);
+  const projectId = params?.id ?? "";
+  const project = workflow.projects.find((item) => String(item.id) === String(projectId)) || PROJECTS.find((item) => String(item.id) === String(projectId));
 
-  useEffect(() => {
-    const syncProject = (state = getSuperAdminState()) => {
-      setSharedProject(state.projects.find((item) => item.id === projectId) || null);
-    };
-
-    syncProject();
-    return subscribeToSuperAdminState(syncProject);
-  }, [projectId]);
-
-  const project = sharedProject || PROJECTS.find((item) => item.id === Number(projectId));
+  useEffect(() => subscribeToWorkflow(setWorkflow), []);
 
   const riskFactors = useMemo(() => (project ? getRiskFactors(project) : []), [project]);
 
@@ -244,7 +246,7 @@ export default function ProjectDetailPage() {
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (project.nodalReviewCompleted) return;
+    const timestamp = new Date().toISOString();
 
     setHistory((current) => [
       {
@@ -257,6 +259,14 @@ export default function ProjectDetailPage() {
       },
       ...current,
     ]);
+
+    updateWorkflowProject(project.id, (current) => ({
+      ...current,
+      status: form.decision === "Intervention Required" ? "Intervention Required" : "Under Monitoring",
+      workflowStatus: form.decision === "Intervention Required" ? "Intervention Required" : "Under Monitoring",
+      interventions: [{ id: `intervention-${Date.now()}`, type: form.decision, action: form.remarks, assignedOfficer: form.officer, priority: form.priority, dueDate: form.targetDate, remarks: form.remarks, timestamp }, ...(current.interventions || [])],
+      notifications: [{ id: `notification-${Date.now()}`, title: "Nodal intervention recorded", detail: `${form.decision} for ${current.name}`, targetRole: "LAO", timestamp, read: false }, ...(current.notifications || [])],
+    }), "Nodal intervention recorded");
   };
 
   const submitToSuperAdmin = () => {
