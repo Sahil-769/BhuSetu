@@ -246,7 +246,8 @@ export default function CreateProjectPage() {
     };
 
     try {
-      await api.createProject(projectPayload);
+      const backendProject = await api.createProject(projectPayload);
+      createWorkflowProject(projectPayload, backendProject);
     } catch (error) {
       createWorkflowProject(projectPayload);
       setSubmitState({ loading: false, error: `Backend unavailable. Saved to local demo storage instead. ${error.message}` });
@@ -254,7 +255,6 @@ export default function CreateProjectPage() {
     }
 
     setSubmitState({ loading: false, error: "" });
-    createWorkflowProject(projectPayload);
     alert("Project created successfully and saved to the backend.");
   };
 

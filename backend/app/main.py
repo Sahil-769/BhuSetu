@@ -94,6 +94,10 @@ class Intervention(Base):
 class ProjectIn(BaseModel):
     projectId: str = Field(min_length=1)
     projectName: str = Field(min_length=1)
+    description: str | None = None
+    documents: list[dict] = Field(default_factory=list)
+    acquisitionRequirement: str | None = None
+    purpose: str | None = None
     projectType: str = Field(min_length=1)
     state: str = Field(min_length=1)
     district: str = Field(min_length=1)
@@ -130,6 +134,17 @@ class WorkflowIn(BaseModel):
     workflowActivity: list[dict] | None = None
 
 
+class DecisionIn(BaseModel):
+    decision: str = Field(min_length=1)
+    priority: str = "Medium"
+    officer: str = Field(min_length=1)
+    targetDate: str | None = None
+    remarks: str = Field(min_length=1)
+    followUpDate: str | None = None
+    status: str = "Open"
+    actor: str = "Nodal Officer"
+
+
 def db():
     session = SessionLocal()
     try:
@@ -140,7 +155,22 @@ def db():
 
 def serialize_project(project: Project) -> dict:
     workflow = (project.acquisition_data or {}).get("workflow", {})
-    return {"id": project.id, "projectId": project.project_id, "name": project.name, "type": project.type, "state": project.state, "district": project.district, "village": project.village, "tehsil": project.tehsil, "requiredLandArea": project.required_land_area, "geometry": project.geometry, "status": project.status, "workflowStatus": workflow.get("workflowStatus", project.status), "nodalReviewCompleted": workflow.get("nodalReviewCompleted", False), "submittedAt": workflow.get("submittedAt"), "submittedBy": workflow.get("submittedBy"), "correctionReason": workflow.get("correctionReason"), "verification": workflow.get("verification"), "workflowActivity": workflow.get("workflowActivity", []), "riskProbability": project.risk_probability, "riskCategory": project.risk_category, "createdAt": project.created_at.isoformat(), "updatedAt": project.updated_at.isoformat()}
+    detail = project.acquisition_data or {}
+    assessment = detail.get("latestAssessment", {})
+    return {"id": project.id, "projectId": project.project_id, "name": project.name, "description": detail.get("description", ""), "type": project.type, "state": project.state, "district": project.district, "village": project.village, "tehsil": project.tehsil, "requiredLandArea": project.required_land_area, "landUnit": detail.get("landUnit", "hectares"), "geometry": project.geometry, "status": project.status, "workflowStatus": workflow.get("workflowStatus", project.status), "nodalReviewCompleted": workflow.get("nodalReviewCompleted", False), "submittedAt": workflow.get("submittedAt"), "submittedBy": workflow.get("submittedBy"), "correctionReason": workflow.get("correctionReason"), "verification": workflow.get("verification"), "workflowActivity": workflow.get("workflowActivity", []), "decisionHistory": detail.get("decisionHistory", []), "documents": detail.get("documents", []), "acquisitionSummary": detail.get("acquisitionSummary", {}), "analysisInputs": detail.get("analysisInputs", {}), "riskProbability": project.risk_probability, "riskCategory": project.risk_category, "assessment": assessment, "createdAt": project.created_at.isoformat(), "updatedAt": project.updated_at.isoformat()}
+
+
+def demo_project_data(payload: ProjectIn) -> dict:
+    documents = payload.documents or [
+        {"name": "Project Proposal.pdf", "type": "Project Proposal", "status": "Verified", "uploadedBy": "Project Officer"},
+        {"name": "Route Plan.pdf", "type": "Project Plan / Route", "status": "In Review", "uploadedBy": "Project Officer"},
+    ]
+    parcels = [
+        {"id": "demo-parcel-1", "khasra": "K-102/4", "area": round(payload.requiredLandArea * 0.04, 2), "location": payload.village or payload.villages, "landUse": "Agricultural", "owner": "Owner reference pending", "status": "Verified"},
+        {"id": "demo-parcel-2", "khasra": "K-108/2", "area": round(payload.requiredLandArea * 0.03, 2), "location": payload.village or payload.villages, "landUse": "Residential", "owner": "Owner reference pending", "status": "Pending"},
+        {"id": "demo-parcel-3", "khasra": "K-114/7", "area": round(payload.requiredLandArea * 0.02, 2), "location": payload.village or payload.villages, "landUse": "Agricultural", "owner": "Owner reference pending", "status": "Pending"},
+    ]
+    return {"acquisition": {"ownership": "Pending verification", "compensation": "Not started", "legal": "Dispute Identified", "rr": "Not started", "approvals": "In review", "documents": "Available", "possession": "Not started"}, "parcels": parcels, "documents": documents, "acquisitionSummary": {"totalParcels": len(parcels), "verifiedParcels": 1, "pendingVerification": len(parcels) - 1, "ownershipIssues": 2, "compensationProgress": 35, "legalCases": 1, "rrStatus": "In progress", "approvals": "In review", "possessionStatus": "Not started"}}
 
 
 app = FastAPI(title="BHOOMI-AI API", version="1.0.0", docs_url="/docs", openapi_url="/api/openapi.json")
@@ -163,7 +193,11 @@ def list_projects(session: Session = Depends(db), risk: str | None = Query(None)
     statement = select(Project).order_by(Project.updated_at.desc())
     if risk: statement = statement.where(Project.risk_category == risk.upper())
     if district: statement = statement.where(Project.district == district)
-    return [serialize_project(item) for item in session.scalars(statement).all()]
+    projects = session.scalars(statement).all()
+    for project in projects:
+        if project.risk_probability is None or project.risk_category is None:
+            _save_prediction(session, project, ["project_list_refresh"])
+    return [serialize_project(item) for item in projects]
 
 
 @app.post("/api/projects", status_code=201)
@@ -171,17 +205,29 @@ def create_project(payload: ProjectIn, session: Session = Depends(db)):
     if session.scalar(select(Project).where(Project.project_id == payload.projectId)):
         raise HTTPException(409, "Project ID already exists")
     geometry = payload.geometry or ({"type": "Point", "coordinates": [payload.longitude, payload.latitude]} if payload.latitude is not None and payload.longitude is not None else None)
-    project = Project(project_id=payload.projectId, name=payload.projectName, type=payload.projectType, state=payload.state, district=payload.district, village=payload.village or payload.villages, tehsil=payload.tehsil, required_land_area=payload.requiredLandArea, geometry=geometry, status=payload.status)
+    project = Project(project_id=payload.projectId, name=payload.projectName, type=payload.projectType, state=payload.state, district=payload.district, village=payload.village or payload.villages, tehsil=payload.tehsil, required_land_area=payload.requiredLandArea, geometry=geometry, status=payload.status, acquisition_data={"description": payload.description or "", "landUnit": payload.unit, "acquisitionRequirement": payload.acquisitionRequirement, "purpose": payload.purpose, **demo_project_data(payload)})
     session.add(project)
     session.commit()
     session.refresh(project)
-    return serialize_project(project)
+    return _save_prediction(session, project, ["project_created"])["project"]
 
 
 @app.get("/api/projects/{project_id}")
 def get_project(project_id: int, session: Session = Depends(db)):
     project = session.get(Project, project_id)
     if not project: raise HTTPException(404, "Project not found")
+    if project.risk_probability is None or project.risk_category is None:
+        _save_prediction(session, project, ["project_detail_refresh"])
+    return serialize_project(project)
+
+
+@app.get("/api/projects/by-code/{project_code}")
+def get_project_by_code(project_code: str, session: Session = Depends(db)):
+    project = session.scalar(select(Project).where(Project.project_id == project_code))
+    if not project:
+        raise HTTPException(404, "Project not found")
+    if project.risk_probability is None or project.risk_category is None:
+        _save_prediction(session, project, ["project_detail_refresh"])
     return serialize_project(project)
 
 
@@ -208,6 +254,32 @@ def update_project_workflow(project_id: int, payload: WorkflowIn, session: Sessi
     return serialize_project(project)
 
 
+@app.post("/api/projects/{project_id}/decisions")
+def create_project_decision(project_id: int, payload: DecisionIn, session: Session = Depends(db)):
+    project = session.get(Project, project_id)
+    if not project:
+        raise HTTPException(404, "Project not found")
+
+    now = datetime.now(timezone.utc)
+    detail = {**(project.acquisition_data or {})}
+    decision = {"date": now.date().isoformat(), "decision": payload.decision, "remarks": payload.remarks, "officer": payload.officer, "targetDate": payload.targetDate, "followUpDate": payload.followUpDate, "priority": payload.priority, "status": payload.status, "timestamp": now.isoformat()}
+    detail["decisionHistory"] = [decision, *(detail.get("decisionHistory") or [])]
+    project.acquisition_data = {**detail, "workflow": {**detail.get("workflow", {}), "lastDecision": decision}}
+    project.status = "Intervention Required" if payload.decision == "Intervention Required" else "Under Monitoring"
+    project.updated_at = now
+    session.add(Intervention(project_id=project.id, intervention_type=payload.decision, action_taken=payload.remarks, responsible_officer=payload.officer, priority=payload.priority, due_date=payload.targetDate, remarks=payload.remarks, status=payload.status, created_at=now))
+    session.commit()
+    session.refresh(project)
+    return {"project": serialize_project(project), "decision": decision}
+
+
+@app.get("/api/projects/{project_id}/interventions")
+def list_project_interventions(project_id: int, session: Session = Depends(db)):
+    if not session.get(Project, project_id):
+        raise HTTPException(404, "Project not found")
+    return [{"id": item.id, "type": item.intervention_type, "action": item.action_taken, "assignedOfficer": item.responsible_officer, "priority": item.priority, "dueDate": item.due_date, "remarks": item.remarks, "status": item.status, "timestamp": item.created_at.isoformat()} for item in session.scalars(select(Intervention).where(Intervention.project_id == project_id).order_by(Intervention.created_at.desc())).all()]
+
+
 @app.put("/api/projects/{project_id}/acquisition")
 def update_acquisition(project_id: int, data: dict, session: Session = Depends(db)):
     project = session.get(Project, project_id)
@@ -218,13 +290,17 @@ def update_acquisition(project_id: int, data: dict, session: Session = Depends(d
 
 
 def _save_prediction(session: Session, project: Project, changed_fields: list[str]):
-    result = predictor.predict({"project_type": project.type, "state": project.state, "district": project.district, "tehsil": project.tehsil or "Unknown", "required_land_area_acres": project.required_land_area, "gis_available": bool(project.geometry), **(project.acquisition_data or {})})
+    current_data = project.acquisition_data or {}
+    default_acquisition = {"ownership": "Pending verification", "compensation": "Not started", "legal": "Dispute Identified", "rr": "Not started", "approvals": "In review", "documents": "Available", "possession": "Not started"}
+    acquisition = {**current_data, "acquisition": {**default_acquisition, **(current_data.get("acquisition") or {})}, "parcels": current_data.get("parcels") or [{"area": 2.4, "status": "Verified"}, {"area": 1.8, "status": "Pending"}]}
+    result = predictor.predict({"project": {"type": project.type, "state": project.state, "district": project.district, "tehsil": project.tehsil or "Unknown", "requiredLandArea": project.required_land_area, "landUnit": current_data.get("landUnit", "acres"), "geometry": project.geometry, "created_at": project.created_at.isoformat()}, "acquisition": acquisition})
     previous = session.scalars(select(Assessment).where(Assessment.project_id == project.id).order_by(Assessment.created_at.desc())).first()
     result["risk_trend"] = "INCREASING" if previous and result["delay_probability"] > previous.delay_probability else "DECREASING" if previous and result["delay_probability"] < previous.delay_probability else "STABLE"
     session.add(Assessment(project_id=project.id, delay_probability=result["delay_probability"], risk_category=result["risk_category"], risk_factors=result["top_risk_factors"], factor_importance=result["factor_importance"], recommendations=result["recommendations"], risk_trend=result["risk_trend"], model_version=result["model_version"], prediction_source=result["prediction_source"], confidence=result["confidence"]))
     session.add(RiskHistory(project_id=project.id, previous_probability=previous.delay_probability if previous else None, new_probability=result["delay_probability"], previous_risk=previous.risk_category if previous else None, new_risk=result["risk_category"], changed_fields=changed_fields, prediction_source=result["prediction_source"], model_version=result["model_version"]))
     project.risk_probability = result["delay_probability"]
     project.risk_category = result["risk_category"]
+    project.acquisition_data = {**current_data, "analysisInputs": acquisition, "latestAssessment": result}
     project.updated_at = datetime.now(timezone.utc)
     session.commit()
     return {"project": serialize_project(project), "assessment": result}
@@ -234,7 +310,10 @@ def _save_prediction(session: Session, project: Project, changed_fields: list[st
 def predict(project_id: int, session: Session = Depends(db)):
     project = session.get(Project, project_id)
     if not project: raise HTTPException(404, "Project not found")
-    result = predictor.predict({"project_type": project.type, "state": project.state, "district": project.district, "tehsil": project.tehsil or "Unknown", "required_land_area_acres": project.required_land_area, "gis_available": bool(project.geometry), **(project.acquisition_data or {})})
+    current_data = project.acquisition_data or {}
+    default_acquisition = {"ownership": "Pending verification", "compensation": "Not started", "legal": "Dispute Identified", "rr": "Not started", "approvals": "In review", "documents": "Available", "possession": "Not started"}
+    acquisition = {**current_data, "acquisition": {**default_acquisition, **(current_data.get("acquisition") or {})}, "parcels": current_data.get("parcels") or [{"area": 2.4, "status": "Verified"}, {"area": 1.8, "status": "Pending"}]}
+    result = predictor.predict({"project": {"type": project.type, "state": project.state, "district": project.district, "tehsil": project.tehsil or "Unknown", "requiredLandArea": project.required_land_area, "landUnit": current_data.get("landUnit", "acres"), "geometry": project.geometry, "created_at": project.created_at.isoformat()}, "acquisition": acquisition})
     previous = session.scalars(select(Assessment).where(Assessment.project_id == project.id).order_by(Assessment.created_at.desc())).first()
     result["risk_trend"] = "INCREASING" if previous and result["delay_probability"] > previous.delay_probability else "DECREASING" if previous and result["delay_probability"] < previous.delay_probability else "STABLE"
     assessment = Assessment(project_id=project.id, delay_probability=result["delay_probability"], risk_category=result["risk_category"], risk_factors=result["top_risk_factors"], factor_importance=result["factor_importance"], recommendations=result["recommendations"], risk_trend=result["risk_trend"], model_version=result["model_version"], prediction_source=result["prediction_source"], confidence=result["confidence"])
@@ -242,6 +321,7 @@ def predict(project_id: int, session: Session = Depends(db)):
     session.add(RiskHistory(project_id=project.id, previous_probability=previous.delay_probability if previous else None, new_probability=result["delay_probability"], previous_risk=previous.risk_category if previous else None, new_risk=result["risk_category"], changed_fields=[], prediction_source=result["prediction_source"], model_version=result["model_version"]))
     project.risk_probability = result["delay_probability"]
     project.risk_category = result["risk_category"]
+    project.acquisition_data = {**current_data, "analysisInputs": acquisition, "latestAssessment": result}
     project.updated_at = datetime.now(timezone.utc)
     session.commit()
     return result

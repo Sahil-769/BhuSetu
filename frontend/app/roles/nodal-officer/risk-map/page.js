@@ -454,19 +454,19 @@ export default function Page() {
             </div>
 
             <div ref={mapShellRef} className="relative z-0 h-[620px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                  <MapContainer
+              <MapContainer
                 center={[23.0, 78.0]}
                 zoom={5}
                 scrollWheelZoom
                 className="relative z-0 h-full w-full"
                 attributionControl={false}
                 style={{ overscrollBehavior: "contain", zIndex: 1 }}
+                whenReady={(event) => {
+                  mapRef.current = event.target;
+                  resetMapView();
+                }}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    whenReady={(event) => {
-                      mapRef.current = event.target;
-                      resetMapView();
-                    }}
 
                 {filteredProjects.map((project) => {
                   const geometry = getProjectGeometry(project);

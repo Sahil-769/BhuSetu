@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -28,6 +28,7 @@ import {
   statusOptions,
 } from "../../project-officer/my-project/projects-data";
 import { getWorkflowState, subscribeToWorkflow } from "../../../../components/workflowStore";
+import { api, mergeProjectCollections } from "@/lib/api";
 
 const PAGE_SIZE = 6;
 
@@ -157,7 +158,8 @@ function RiskBadge({ category, probability }) {
 
 function ProjectCard({ project }) {
   const ProjectIcon = projectTypeMeta[project.type]?.icon || Construction;
-  const progress = Math.min(100, Math.max(18, project.riskProbability));
+  const probability = Number.isFinite(Number(project.riskProbability)) ? Number(project.riskProbability) : 44;
+  const progress = Math.min(100, Math.max(18, probability));
 
   return (
     <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md">
@@ -171,7 +173,7 @@ function ProjectCard({ project }) {
             <p className="mt-1 text-sm font-medium text-slate-500">{project.projectId}</p>
           </div>
         </div>
-        <RiskBadge category={project.riskCategory} probability={project.riskProbability} />
+        <RiskBadge category={project.riskCategory || "Medium"} probability={probability} />
       </div>
 
       <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
@@ -244,7 +246,7 @@ function ProjectCard({ project }) {
           {project.type} • {project.district}
         </div>
         <Link
-          href={`/roles/nodal-officer/projects/${project.id}`}
+          href={`/roles/nodal-officer/projects/${encodeURIComponent(project.projectId || project.id)}`}
           className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
           aria-label={`View details for ${project.name}`}
         >
@@ -285,8 +287,16 @@ export default function Page() {
   const [districtFilter, setDistrictFilter] = useState("All");
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
+  const backendProjectsRef = useRef([]);
 
-  useEffect(() => subscribeToWorkflow((state) => setProjectList(state.projects)), []);
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkflow((state) => setProjectList((current) => mergeProjectCollections(state.projects, backendProjectsRef.current)));
+    api.listProjects().then((projects) => {
+      backendProjectsRef.current = projects;
+      setProjectList((current) => mergeProjectCollections(current, projects));
+    }).catch(() => {});
+    return unsubscribe;
+  }, []);
 
   const summaryCounts = useMemo(
     () => ({
@@ -506,7 +516,7 @@ export default function Page() {
             <>
               <div className="grid gap-4 xl:grid-cols-2">
                 {currentProjects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard key={project.projectId || `project-${project.id}`} project={project} />
                 ))}
               </div>
 

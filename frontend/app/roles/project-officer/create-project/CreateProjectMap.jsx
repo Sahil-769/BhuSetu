@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { EditControl } from "react-leaflet-draw";
+import L from "leaflet";
 import { FeatureGroup, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
@@ -57,6 +57,20 @@ function RecenterMap({ center }) {
 
 export default function CreateProjectMap({ isLinear, onGeometryChange }) {
   const [center, setCenter] = useState({ latitude: 28.6139, longitude: 77.209 });
+  const [EditControl, setEditControl] = useState(null);
+
+  useEffect(() => {
+    window.L = window.L || L;
+
+    let mounted = true;
+    import("react-leaflet-draw").then((module) => {
+      if (mounted) setEditControl(() => module.EditControl);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const updateGeometry = (layer) => {
     const feature = toFeature(layer);
@@ -82,21 +96,23 @@ export default function CreateProjectMap({ isLinear, onGeometryChange }) {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
         <RecenterMap center={center} />
         <FeatureGroup>
-          <EditControl
-            position="topleft"
-            onCreated={(event) => updateGeometry(event.layer)}
-            onEdited={(event) => event.layers.eachLayer(updateGeometry)}
-            onDeleted={clearGeometry}
-            draw={{
-              rectangle: false,
-              circle: false,
-              circlemarker: false,
-              marker: false,
-              polygon: !isLinear,
-              polyline: isLinear,
-            }}
-            edit={{ remove: true }}
-          />
+          {EditControl && (
+            <EditControl
+              position="topleft"
+              onCreated={(event) => updateGeometry(event.layer)}
+              onEdited={(event) => event.layers.eachLayer(updateGeometry)}
+              onDeleted={clearGeometry}
+              draw={{
+                rectangle: false,
+                circle: false,
+                circlemarker: false,
+                marker: false,
+                polygon: !isLinear,
+                polyline: isLinear,
+              }}
+              edit={{ remove: true }}
+            />
+          )}
         </FeatureGroup>
       </MapContainer>
       <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-lg bg-white/95 px-3 py-2 text-xs text-slate-700 shadow">

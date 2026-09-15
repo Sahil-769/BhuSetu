@@ -26,7 +26,7 @@ import {
   updateSuperAdminState,
 } from "../superAdminStore.js";
 import { updateWorkflowProject } from "../../../../components/workflowStore";
-import { api } from "../../../../lib/api";
+import { api, normalizeProject } from "../../../../lib/api";
 import { projectTypeMeta } from "../../project-officer/my-project/projects-data";
 import NodalGISPanel from "../../nodal-officer/projects/[id]/NodalGISPanel";
 import styles from "../superAdmin.module.css";
@@ -96,8 +96,8 @@ function RiskFactors({ factors }) {
 
 function buildDummyReviewData(project, assessment) {
   const numericId = Math.abs(Number.parseInt(String(project.id).replace(/\D/g, ""), 10) || 1);
-  const probability = Number(assessment?.probability ?? project.riskProbability ?? 30);
-  const category = assessment?.category || project.riskCategory || "Medium";
+  const probability = Number(assessment?.delay_probability ?? assessment?.probability ?? project.riskProbability ?? 30);
+  const category = assessment?.risk_category || assessment?.category || project.riskCategory || "Medium";
   const totalParcels = 24 + (numericId % 5) * 12;
   const verifiedParcels = Math.min(totalParcels, Math.max(8, Math.round(totalParcels * (0.48 + (numericId % 4) * 0.1))));
   const factors = [
@@ -158,12 +158,15 @@ export default function SuperAdminProjectDetails() {
 
   useEffect(() => subscribeToSuperAdminState(setState), []);
 
+  const localProject = state.projects.find((item) => String(item.id) === String(projectId) || String(item.projectId) === String(projectId));
+
   useEffect(() => {
     let active = true;
     setApiLoading(true);
-    Promise.all([api.getProject(projectId), api.getAssessment(projectId).catch(() => null), api.getHistory(projectId).catch(() => [])]).then(([nextProject, nextAssessment, nextHistory]) => {
+    const loadProject = /^\d+$/.test(String(projectId)) ? api.getProject(projectId) : api.getProjectByCode(localProject?.projectId || projectId);
+    loadProject.then((nextProject) => Promise.all([Promise.resolve(nextProject), api.getAssessment(nextProject.id).catch(() => api.predict(nextProject.id)), api.getHistory(nextProject.id).catch(() => [])])).then(([nextProject, nextAssessment, nextHistory]) => {
       if (!active) return;
-      setApiProject(nextProject);
+      setApiProject(normalizeProject({ ...nextProject, riskProbability: nextProject.riskProbability ?? nextAssessment?.delay_probability, riskCategory: nextProject.riskCategory ?? nextAssessment?.risk_category }));
       setApiAssessment(nextAssessment);
       setApiRiskHistory(nextHistory || []);
       setApiError("");
@@ -171,15 +174,18 @@ export default function SuperAdminProjectDetails() {
       if (active) setApiError(error.message || "Project API unavailable. Showing local project data.");
     }).finally(() => { if (active) setApiLoading(false); });
     return () => { active = false; };
-  }, [projectId]);
+  }, [localProject?.projectId, projectId]);
 
-  const localProject = state.projects.find((item) => String(item.id) === String(projectId));
   const project = localProject ? { ...localProject, ...(apiProject || {}), coordinates: localProject.coordinates || (apiProject?.geometry?.type === "Point" ? { latitude: apiProject.geometry.coordinates[1], longitude: apiProject.geometry.coordinates[0] } : undefined) } : apiProject;
-  const assignment = state.assignments.find((item) => String(item.projectId) === String(projectId));
+  const assignment = state.assignments.find((item) => String(item.projectId) === String(project?.id || projectId) || String(item.projectId) === String(project?.projectId || projectId));
   const riskHistory = useMemo(() => project && apiRiskHistory.length === 0 ? [
     { date: project.createdAt, value: `${Math.max(35, project.riskProbability - 12)}%`, note: "Initial AI assessment" },
     { date: project.updatedAt, value: `${project.riskProbability}%`, note: "Latest AI assessment after acquisition data updates" },
   ] : apiRiskHistory.map((item) => ({ date: item.timestamp, value: `${item.new_probability}% ${item.new_risk}`, note: item.changed_fields?.length ? `Updated fields: ${item.changed_fields.join(", ")}` : "AI assessment update" })), [apiRiskHistory, project]);
+
+  if (apiLoading && !project) {
+    return <div className="min-h-screen bg-slate-50"><Header title="Super Admin · Projects" /><main className="mx-auto max-w-3xl px-4 pt-24"><div className="rounded-2xl border border-slate-200 bg-white p-8 text-center"><p className="text-sm text-slate-500">Loading project and ML assessment...</p></div></main></div>;
+  }
 
   if (!project) {
     return (
@@ -202,8 +208,8 @@ export default function SuperAdminProjectDetails() {
   const canVerify = category === "Closure Recommended / Pending Final Verification" && project.nodalReviewCompleted === true;
   const ProjectIcon = projectTypeMeta[project.type]?.icon || FolderKanban;
   const reviewData = buildDummyReviewData(project, apiAssessment);
-  const effectiveRiskProbability = Number(apiAssessment?.probability ?? project.riskProbability ?? 0);
-  const effectiveRiskCategory = apiAssessment?.category || project.riskCategory || "N/A";
+  const effectiveRiskProbability = Number(apiAssessment?.delay_probability ?? apiAssessment?.probability ?? project.riskProbability ?? 0);
+  const effectiveRiskCategory = apiAssessment?.risk_category || apiAssessment?.category || project.riskCategory || "N/A";
   const workflowActivity = uniqueWorkflowActivity(project.workflowActivity);
 
   const updateWorkflow = (action, mutate) => {

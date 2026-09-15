@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { Header } from "@/app/component/layout/index";
+import { api } from "@/lib/api";
 import { PROJECTS, projectTypeMeta } from "../../../project-officer/my-project/projects-data";
 import { getWorkflowState, subscribeToWorkflow, updateWorkflowProject } from "../../../../../components/workflowStore";
 import { addAuditLog, updateSuperAdminState } from "../../../super-admin/superAdminStore";
@@ -62,9 +63,13 @@ const formatDateTime = (value) =>
 
 const riskTone = {
   Low: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  LOW: "border-emerald-200 bg-emerald-50 text-emerald-700",
   Medium: "border-amber-200 bg-amber-50 text-amber-700",
+  MEDIUM: "border-amber-200 bg-amber-50 text-amber-700",
   High: "border-orange-200 bg-orange-50 text-orange-700",
+  HIGH: "border-orange-200 bg-orange-50 text-orange-700",
   Critical: "border-red-200 bg-red-50 text-red-700",
+  CRITICAL: "border-red-200 bg-red-50 text-red-700",
   "N/A": "border-slate-200 bg-slate-100 text-slate-600",
 };
 
@@ -133,6 +138,11 @@ const defaultDecisionHistory = [
 export default function ProjectDetailPage() {
   const params = useParams();
   const [workflow, setWorkflow] = useState(() => getWorkflowState());
+  const [apiProject, setApiProject] = useState(null);
+  const [apiAssessment, setApiAssessment] = useState(null);
+  const [apiRiskHistory, setApiRiskHistory] = useState([]);
+  const [apiError, setApiError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [form, setForm] = useState({
     decision: "Intervention Required",
     priority: "High",
@@ -146,11 +156,40 @@ export default function ProjectDetailPage() {
   const submissionInProgress = useRef(false);
 
   const projectId = params?.id ?? "";
-  const project = workflow.projects.find((item) => String(item.id) === String(projectId)) || PROJECTS.find((item) => String(item.id) === String(projectId));
+  const localProject = workflow.projects.find((item) => String(item.id) === String(projectId) || String(item.projectId) === String(projectId)) || PROJECTS.find((item) => String(item.id) === String(projectId) || String(item.projectId) === String(projectId));
+  const project = apiProject ? {
+    ...localProject,
+    ...apiProject,
+    riskProbability: apiProject.riskProbability ?? apiAssessment?.delay_probability ?? localProject?.riskProbability,
+    riskCategory: apiProject.riskCategory ?? apiAssessment?.risk_category ?? localProject?.riskCategory,
+  } : localProject;
 
   useEffect(() => subscribeToWorkflow(setWorkflow), []);
 
-  const riskFactors = useMemo(() => (project ? getRiskFactors(project) : []), [project]);
+  useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    const loadProject = /^\d+$/.test(String(projectId)) ? api.getProject(projectId) : api.getProjectByCode(localProject?.projectId || projectId);
+    loadProject.then((nextProject) => Promise.all([Promise.resolve(nextProject), api.getAssessment(nextProject.id).catch(() => api.predict(nextProject.id)), api.getHistory(nextProject.id).catch(() => []), api.getInterventions(nextProject.id).catch(() => [])]))
+      .then(([nextProject, nextAssessment, nextRiskHistory, nextInterventions]) => {
+        if (!active) return;
+        const embeddedAssessment = nextProject.assessment || {};
+        const resolvedAssessment = nextAssessment || embeddedAssessment;
+        setApiProject({ ...nextProject, riskProbability: nextProject.riskProbability ?? resolvedAssessment?.delay_probability, riskCategory: nextProject.riskCategory ?? resolvedAssessment?.risk_category });
+        setApiAssessment(resolvedAssessment);
+        setApiRiskHistory(nextRiskHistory || []);
+        setApiError("");
+        setIsLoading(false);
+      })
+      .catch((error) => { if (active) { setApiError(error.message || "Project API unavailable"); setIsLoading(false); } });
+    return () => { active = false; };
+  }, [localProject?.projectId, projectId]);
+
+  const riskFactors = useMemo(() => apiAssessment?.top_risk_factors?.length ? apiAssessment.top_risk_factors.map((factor) => ({ factor: factor.factor || factor, impact: "High", action: factor.recommendation || "Review and resolve this risk factor." })) : (project ? getRiskFactors(project) : []), [apiAssessment, project]);
+  const recommendations = useMemo(() => {
+    if (apiAssessment?.recommendations?.length) return apiAssessment.recommendations;
+    return riskFactors.map((item) => item.action);
+  }, [apiAssessment, riskFactors]);
 
   const acquisitionSummary = useMemo(() => {
     if (!project) return null;
@@ -174,6 +213,10 @@ export default function ProjectDetailPage() {
   const riskHistory = useMemo(() => {
     if (!project) return [];
 
+    if (apiRiskHistory.length) {
+      return apiRiskHistory.map((item) => ({ date: item.timestamp, value: `${item.new_probability}% ${item.new_risk}`, note: item.changed_fields?.length ? `Updated fields: ${item.changed_fields.join(", ")}` : "AI assessment update." }));
+    }
+
     const baseline = project.riskProbability >= 80 ? 82 : project.riskProbability >= 60 ? 64 : 38;
 
     return [
@@ -182,9 +225,9 @@ export default function ProjectDetailPage() {
       { date: "2026-09-05", value: `${project.riskProbability}% ${project.riskCategory}`, note: "Risk recalculated after new ownership and compensation data were received." },
       { date: "2026-09-08", value: `${Math.max(18, project.riskProbability - 25)}% ${project.riskProbability > 50 ? "High" : "Medium"}`, note: "Proactive intervention and settlement updates reduced predicted delay likelihood." },
     ];
-  }, [project]);
+  }, [apiRiskHistory, project]);
 
-  const uploadedDocuments = [
+  const fallbackDocuments = [
     {
       name: "Land Survey Map.pdf",
       type: "Survey Report",
@@ -218,6 +261,9 @@ export default function ProjectDetailPage() {
       status: "Pending",
     },
   ];
+  if (isLoading && !project) {
+    return <div className="min-h-screen bg-slate-50 text-slate-800"><Header title="Projects" /><main className="mx-auto max-w-3xl px-4 pb-12 pt-24 sm:px-6 lg:px-8"><div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm"><p className="text-sm text-slate-500">Loading project and ML assessment...</p></div></main></div>;
+  }
 
   if (!project) {
     return (
@@ -240,14 +286,27 @@ export default function ProjectDetailPage() {
     );
   }
 
+  const uploadedDocuments = project.documents?.length ? project.documents : fallbackDocuments;
   const ProjectIcon = projectTypeMeta[project.type]?.icon || Building2;
 
   const handleFormChange = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (/^\d+$/.test(String(project.id))) {
+      try {
+        const result = await api.createDecision(project.id, form);
+        setApiProject(result.project);
+        setHistory(result.project.decisionHistory || []);
+        setApiError("");
+      } catch (error) {
+        setApiError(error.message || "Unable to save the decision");
+        return;
+      }
+    }
 
     const timestamp = new Date().toISOString();
 
@@ -272,7 +331,7 @@ export default function ProjectDetailPage() {
     }), "Nodal intervention recorded");
   };
 
-  const submitToSuperAdmin = () => {
+  const submitToSuperAdmin = async () => {
     if (project.nodalReviewCompleted || submissionInProgress.current) return;
     submissionInProgress.current = true;
 
@@ -287,6 +346,18 @@ export default function ProjectDetailPage() {
       submittedBy: "Sahil Alvi",
       workflowActivity: [workflowActivity, ...(item.workflowActivity || []).filter((activity) => activity.action !== "Submitted to Super Admin")],
     });
+
+    if (/^\d+$/.test(String(project.id))) {
+      try {
+        const saved = await api.updateProjectWorkflow(project.id, { status: "Closure Recommended / Pending Final Verification", workflowStatus: "Closure Recommended / Pending Final Verification", nodalReviewCompleted: true, submittedAt, submittedBy: "Sahil Alvi", workflowActivity: [workflowActivity, ...(project.workflowActivity || [])] });
+        setApiProject((current) => ({ ...current, ...saved }));
+        setApiError("");
+      } catch (error) {
+        setApiError(error.message || "Unable to submit the project");
+        submissionInProgress.current = false;
+        return;
+      }
+    }
 
     updateWorkflowProject(project.id, submittedProject, "Project submitted to Super Admin");
     updateSuperAdminState((current) => addAuditLog(current, "Project submitted to Super Admin", project.name, "Workflow", (next) => {
@@ -305,6 +376,7 @@ export default function ProjectDetailPage() {
       <Header title="Projects" />
 
       <main className="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
+        {apiError ? <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{apiError}</div> : null}
         <div className="mb-6 flex items-center justify-between gap-4">
           <Link
             href="/roles/nodal-officer/projects"
@@ -381,7 +453,7 @@ export default function ProjectDetailPage() {
                 <p className="text-3xl font-semibold text-slate-900">{project.riskProbability}%</p>
                 <p className="mt-1 text-sm font-semibold uppercase tracking-[0.12em] text-red-700">{project.riskCategory} Risk</p>
                 <p className="mt-2 text-sm text-slate-600">Risk trend: <span className="font-semibold text-slate-800">{getRiskTrend(project)}</span></p>
-                <p className="mt-1 text-xs text-slate-500">Model version: v1.2 • Last updated: {formatDate(project.updatedAt)}</p>
+                <p className="mt-1 text-xs text-slate-500">Model version: {apiAssessment?.model_version || "xgb-existing-model"} • Last updated: {formatDate(apiAssessment?.last_updated || project.updatedAt)}</p>
               </div>
             </div>
           </div>
@@ -430,8 +502,8 @@ export default function ProjectDetailPage() {
               <li><span className="font-medium text-slate-800">Delay probability:</span> {project.riskProbability}%</li>
               <li><span className="font-medium text-slate-800">Category:</span> {project.riskCategory}</li>
               <li><span className="font-medium text-slate-800">Trend:</span> {getRiskTrend(project)}</li>
-              <li><span className="font-medium text-slate-800">Model version:</span> v1.2</li>
-              <li><span className="font-medium text-slate-800">Confidence:</span> 87%</li>
+              <li><span className="font-medium text-slate-800">Model version:</span> {apiAssessment?.model_version || "xgb-existing-model"}</li>
+              <li><span className="font-medium text-slate-800">Confidence:</span> {apiAssessment?.confidence ?? "Model output"}</li>
               <li><span className="font-medium text-slate-800">Last updated:</span> {formatDate(project.updatedAt)}</li>
             </ul>
           </div>
@@ -466,10 +538,10 @@ export default function ProjectDetailPage() {
               Recommended actions
             </p>
             <div className="mt-4 space-y-3">
-              {riskFactors.map((item) => (
-                <div key={`${item.factor}-action`} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                  <div className="font-medium text-slate-800">{item.factor.replace(/\.$/, "")}</div>
-                  <div className="mt-1 text-xs leading-5 text-slate-600">Action: {item.action}</div>
+              {recommendations.map((recommendation, index) => (
+                <div key={`${recommendation}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+                  <div className="font-medium text-slate-800">Recommendation {index + 1}</div>
+                  <div className="mt-1 text-xs leading-5 text-slate-600">{recommendation}</div>
                 </div>
               ))}
             </div>
@@ -602,7 +674,7 @@ export default function ProjectDetailPage() {
             </p>
 
             <div className="mt-4 space-y-3">
-              {history.map((item, index) => (
+              {(project.decisionHistory || history || []).map((item, index) => (
                 <div key={`${item.date}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-semibold text-slate-800">{item.decision}</span>

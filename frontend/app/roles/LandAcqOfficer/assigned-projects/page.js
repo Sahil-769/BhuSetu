@@ -27,6 +27,7 @@ import {
   statusOptions,
 } from "./projects-data";
 import { getWorkflowState, subscribeToWorkflow } from "../../../../components/workflowStore";
+import { api, mergeProjectCollections } from "@/lib/api";
 
 const PAGE_SIZE = 6;
 
@@ -192,7 +193,7 @@ function ProjectCard({ project }) {
           Type: <span className="font-semibold text-slate-700">{project.type}</span>
         </div>
         <Link
-          href={`/roles/LandAcqOfficer/assigned-projects/${project.id}`}
+          href={`/roles/LandAcqOfficer/assigned-projects/${encodeURIComponent(project.projectId || project.id)}`}
           className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
           aria-label={`View details for ${project.name}`}
         >
@@ -234,7 +235,11 @@ export default function Page() {
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => subscribeToWorkflow((state) => setProjectList(state.projects)), []);
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkflow((state) => setProjectList(state.projects));
+    api.listProjects().then((projects) => setProjectList((current) => mergeProjectCollections(current, projects))).catch(() => {});
+    return unsubscribe;
+  }, []);
 
   const summaryCounts = useMemo(
     () => ({
@@ -448,7 +453,7 @@ export default function Page() {
             <>
               <div className="grid gap-4 xl:grid-cols-2">
                 {currentProjects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard key={project.projectId || `project-${project.id}`} project={project} />
                 ))}
               </div>
 

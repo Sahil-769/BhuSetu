@@ -94,13 +94,13 @@ export function addAuditLog(state, action, target, category = "Administration", 
 
 export function updateProjectWorkflow(projectId, mutate) {
   updateSuperAdminState((current) => {
-    const project = current.projects.find((item) => item.id === Number(projectId));
+    const project = current.projects.find((item) => String(item.id) === String(projectId) || String(item.projectId) === String(projectId));
     if (!project) return current;
 
     const nextProject = mutate(project);
     return {
       ...current,
-      projects: current.projects.map((item) => item.id === Number(projectId) ? nextProject : item),
+      projects: current.projects.map((item) => String(item.id) === String(projectId) || String(item.projectId) === String(projectId) ? nextProject : item),
     };
   });
 }
