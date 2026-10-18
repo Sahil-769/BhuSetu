@@ -120,7 +120,7 @@ const Sidebar = () => {
             {/* Toggle Button */}
             <button
               onClick={toggleNavbar}
-              className="nav-link hover:bg-white/10 transition-all duration-200 py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-sm font-medium border border-white/10 animation-bounce"
+              className="sidebar-nav-link hover:bg-white/10 transition-all duration-200 py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-sm font-medium border border-white/10 animation-bounce"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <span className="text-lg">
@@ -134,7 +134,7 @@ const Sidebar = () => {
                 {tabs.map((tab, index) => (
                   <li
                     key={index}
-                    className={`nav-link ${isActive(tab.url) ? "active" : ""} ${
+                    className={`sidebar-nav-link ${isActive(tab.url) ? "active" : ""} ${
                       isCollapsed ? "justify-center text-center" : ""
                     }`}
                     title={isCollapsed ? tab.name : ""}

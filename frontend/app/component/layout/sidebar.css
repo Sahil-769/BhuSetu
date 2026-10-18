@@ -22,7 +22,7 @@ nav > ul {
   width: 100%;
 }
 
-.nav-link > .icon {
+.sidebar-nav-link > .icon {
   width: 1.375rem;
   display: inline-block;
   text-align: center;
@@ -30,18 +30,18 @@ nav > ul {
   transform: scale(1.16);
 }
 
-.nav-link:hover { 
+.sidebar-nav-link:hover {
   background: rgba(255, 255, 255, 0.05);
   transform: translateX(4px);
 }
 
-.nav-link.active {
+.sidebar-nav-link.active {
   /* background: linear-gradient(90deg, #60a5fa, #7c3aed); */
   /* background-color:rgb(255, 64, 185); */
   /* box-shadow: 0 6px 8px #5c46ff1f; */
   background-color: blue;
   width: 100%;
 }
-.nav-link.active .icon {
+.sidebar-nav-link.active .icon {
   transform: scale(1.2);
 }

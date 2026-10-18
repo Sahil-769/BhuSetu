@@ -2,8 +2,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "BHOOMI - AI",
-  description: "Suggestion From AI",
+  title: "BhuSetu | Land Acquisition Intelligence",
+  description: "AI-powered land acquisition intelligence for identifying delay risks and enabling timely action.",
 };
 
 export default function RootLayout({ children }) {
