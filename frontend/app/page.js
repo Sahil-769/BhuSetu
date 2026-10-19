@@ -1,676 +1,215 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { animate } from "animejs";
+import { useState } from "react";
+import Link from "next/link";
 import {
-  Activity,
-  ArrowRight,
-  ArrowUpRight,
-  BriefcaseBusiness,
-  Building2,
-  CheckCircle2,
+  Bell,
+  ChevronDown,
+  ChevronRight,
   FileText,
+  FolderKanban,
   Gauge,
-  Landmark,
-  Layers3,
-  MapPinned,
+  Globe2,
+  LayoutDashboard,
   Menu,
-  MoonStar,
+  MapPinned,
+  Plus,
+  Search,
+  Settings,
   ShieldCheck,
   Sparkles,
-  SunMedium,
-  Target,
-  TrendingUp,
-  UserRoundCog,
   Users,
   X,
 } from "lucide-react";
-import Link from "next/link";
 import "./page.css";
 
-const navItems = [
-  { label: "Home", id: "home" },
-  { label: "About", id: "about" },
-  { label: "Contact Us", id: "contact" },
-];
-
-const objectiveCards = [
-  {
-    icon: Target,
-    title: "Early Risk Detection",
-    text: "Identify projects that may face acquisition delays before they become critical.",
-  },
-  {
-    icon: Sparkles,
-    title: "Explainable AI",
-    text: "Understand why a project is at risk and which factors contribute most to the prediction.",
-  },
-  {
-    icon: ArrowUpRight,
-    title: "Actionable Intervention",
-    text: "Provide recommendations that help responsible officers address identified issues.",
-  },
-];
-
-const roleCards = [
-  {
-    icon: BriefcaseBusiness,
-    title: "Project Officer",
-    responsibilities: [
-      "Create infrastructure projects and define scope.",
-      "Enter project location, land area, and route details.",
-      "Track project progress and AI-generated risk summaries.",
-    ],
-    authority: "Creates and tracks projects; does not manage legal acquisition decisions.",
-  },
-  {
-    icon: Landmark,
-    title: "Land Acquisition Officer (LAO)",
-    responsibilities: [
-      "Verify candidate land parcels and ownership records.",
-      "Maintain acquisition, compensation, legal, and R&R updates.",
-      "Submit verified data for AI assessment and intervention planning.",
-    ],
-    authority: "Manages assigned acquisition records and submits official acquisition updates.",
-  },
-  {
-    icon: UserRoundCog,
-    title: "Nodal Officer",
-    responsibilities: [
-      "Monitor project risk assessments and trends.",
-      "Review risk factors, GIS views, and action recommendations.",
-      "Record interventions and follow-up progress.",
-    ],
-    authority: "Coordinates risk monitoring and interventions; does not override AI-generated scores.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "System Administrator",
-    responsibilities: [
-      "Manage users, permissions, and role-based access.",
-      "Configure jurisdictions and project assignments.",
-      "Maintain system configuration and audit visibility.",
-    ],
-    authority: "Administers the platform, not land acquisition decisions.",
-  },
-];
-
-const workflowSteps = [
-  {
-    number: "01",
-    title: "Project Creation",
-    label: "Input",
-    text: "The project officer creates the infrastructure project and defines its route or boundary.",
-    accent: "emerald",
-    icon: BriefcaseBusiness,
-  },
-  {
-    number: "02",
-    title: "GIS Parcel Identification",
-    label: "Spatial Match",
-    text: "Authorized GIS data is intersected with the project polygon or route buffer to identify candidate parcels.",
-    accent: "teal",
-    icon: MapPinned,
-  },
-  {
-    number: "03",
-    title: "Acquisition Data Verification",
-    label: "Field Data",
-    text: "The LAO validates ownership, compensation, legal, and R&R status for the verified acquisition case.",
-    accent: "amber",
-    icon: Landmark,
-  },
-  {
-    number: "04",
-    title: "AI Risk Prediction",
-    label: "Assessment",
-    text: "The model calculates delay probability, highlights risk factors, and recommends corrective action.",
-    accent: "violet",
-    icon: Gauge,
-  },
-  {
-    number: "05",
-    title: "Officer Intervention",
-    label: "Action",
-    text: "The nodal officer reviews the risk assessment, records interventions, and coordinates follow-up.",
-    accent: "blue",
-    icon: UserRoundCog,
-  },
-  {
-    number: "06",
-    title: "Dynamic Risk Recalculation",
-    label: "Monitoring",
-    text: "When verified acquisition information changes, the system refreshes the risk history and score.",
-    accent: "rose",
-    icon: TrendingUp,
-  },
-];
-
-const featureCards = [
-  {
-    icon: Gauge,
-    title: "AI-Powered Delay Prediction",
-    text: "Estimate the likelihood of acquisition delays and classify risk as Low, Medium, High, or Critical.",
-  },
-  {
-    icon: Activity,
-    title: "Explainable Risk Factors",
-    text: "Display the leading contributors to predicted delay, such as compensation issues, legal disputes, or ownership verification.",
-  },
-  {
-    icon: MapPinned,
-    title: "GIS-Based Risk Visualization",
-    text: "Visualize project locations, routes, available parcel geometry, and risk information on an interactive map.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Actionable Recommendations",
-    text: "Link suggested actions directly to the identified risk factors and responsible officer workflows.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Dynamic Risk Monitoring",
-    text: "Reassess predicted risk after verified data updates and maintain a history of changes over time.",
-  },
-  {
-    icon: Users,
-    title: "Role-Based Access Control",
-    text: "Ensure users access only the projects and operations permitted by their assignments.",
-  },
-  {
-    icon: Layers3,
-    title: "Risk Analytics",
-    text: "Show risk distribution, major delay drivers, project comparisons, and trends where sufficient data exists.",
-  },
-  {
-    icon: FileText,
-    title: "Transparent Assessments",
-    text: "Display assessment timestamps, model version, and confidence information when available.",
-  },
-];
-
 const roleLinks = [
-  { href: "/roles/project-officer/", name: "Project Officer", text: "Create projects and submit GIS boundaries.", index: "01" },
-  { href: "/roles/LandAcqOfficer/", name: "Land Acquisition Officer", text: "Review parcels and acquisition progress.", index: "02" },
-  { href: "/roles/nodal-officer/", name: "Nodal Officer", text: "Monitor risk, actions and project closure.", index: "03" },
-  { href: "/roles/admin", name: "Admin", text: "Manage users, jurisdictions and controls.", index: "04" },
-  { href: "/roles/super-admin", name: "Super Admin", text: "Verify projects and make final decisions.", index: "05" },
+  {
+    href: "/roles/project-officer/",
+    title: "Project Officer",
+    description: "Create projects and submit GIS boundaries.",
+    icon: FolderKanban,
+  },
+  {
+    href: "/roles/LandAcqOfficer/",
+    title: "Land Acquisition Officer",
+    description: "Review parcels and acquisition progress.",
+    icon: MapPinned,
+  },
+  {
+    href: "/roles/nodal-officer/",
+    title: "Nodal Officer",
+    description: "Monitor risk, actions and project closure.",
+    icon: Gauge,
+  },
+  {
+    href: "/roles/admin",
+    title: "System Administrator",
+    description: "Manage users, jurisdictions and controls.",
+    icon: Settings,
+  },
+  {
+    href: "/roles/super-admin",
+    title: "Super Admin",
+    description: "Verify projects and make final decisions.",
+    icon: ShieldCheck,
+  },
 ];
 
-export default function Page() {  const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "light";
-    const savedTheme = window.localStorage.getItem("bhusetu-theme");
-    return savedTheme || "light";
-  });
-  const [activeSection, setActiveSection] = useState("home");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const navigation = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "#dashboard" },
+  { label: "My Projects", icon: FolderKanban, href: "#projects" },
+  { label: "GIS Overview", icon: MapPinned, href: "#gis" },
+  { label: "Notifications", icon: Bell, href: "#notifications", badge: "3" },
+];
+
+const projects = [
+  { code: "BH-2026-AUTO", name: "Delhi-Meerut Highway Expansion", location: "Uttar Pradesh", status: "In progress", risk: "High", progress: 68 },
+  { code: "BH-2026-IRR", name: "Yamuna Irrigation Corridor", location: "Haryana", status: "Under review", risk: "Medium", progress: 44 },
+  { code: "BH-2026-METRO", name: "Regional Metro Link", location: "Delhi NCR", status: "Draft", risk: "Low", progress: 22 },
+];
+
+export default function Page() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rolePickerOpen, setRolePickerOpen] = useState(false);
-  const roleDialogRef = useRef(null);
-
-  useEffect(() => {
-    const dialog = roleDialogRef.current;
-    if (rolePickerOpen && dialog && !dialog.open) dialog.showModal();
-  }, [rolePickerOpen]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("bhusetu-theme", theme);
-    document.documentElement.style.colorScheme = theme;
-  }, [theme]);
-
-  useEffect(() => {
-    const sections = document.querySelectorAll("section[id]");
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntry = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-        if (visibleEntry?.target?.id) {
-          setActiveSection(visibleEntry.target.id);
-        }
-      },
-      { rootMargin: "-35% 0px -40% 0px", threshold: [0.2, 0.4, 0.7] }
-    );
-
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const revealElements = document.querySelectorAll(".reveal-card");
-    if (!revealElements.length) return;
-
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) {
-      revealElements.forEach((element) => element.classList.add("is-visible"));
-      return;
-    }
-
-    const revealObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const target = entry.target;
-            target.classList.add("is-visible");
-            animate(target, {
-              opacity: [0, 1],
-              translateY: [22, 0],
-              duration: 700,
-              easing: "easeOutCubic",
-            });
-            revealObserver.unobserve(target);
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
-    );
-
-    revealElements.forEach((element) => revealObserver.observe(element));
-    return () => revealObserver.disconnect();
-  }, []);
 
   return (
-    <main className="landing-page" data-theme={theme}>
-      <header className="site-header">
-        <div className="container nav-shell">
-          <a href="#home" className="brand" aria-label="BhuSetu home" target="_blank" rel="noopener noreferrer">
-            <span className="brand-mark" aria-hidden="true">
-              <span className="brand-core" />
-            </span>
-            <span className="brand-copy">
-              <strong>BhuSetu</strong>
-            </span>
-          </a>
-
-          <nav className="main-nav" aria-label="Primary navigation">
-            {navItems.map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                className={`nav-link ${activeSection === item.id ? "active" : ""}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="nav-actions">
-            <button
-              type="button"
-              className="theme-toggle"
-              onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
-              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-            >
-              {theme === "light" ? <MoonStar size={18} /> : <SunMedium size={18} />}
-            </button>
-
-            <button
-              type="button"
-              className="menu-toggle"
-              aria-label="Open navigation menu"
-              aria-expanded={mobileMenuOpen}
-              onClick={() => setMobileMenuOpen((open) => !open)}
-            >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
+    <main className="dashboard-landing">
+      <aside className={`dashboard-sidebar ${sidebarOpen ? "is-open" : ""}`}>
+        <div className="sidebar-brand">
+          <span className="sidebar-logo"><img src="/images/logo.png" alt="" /></span>
+          <span>
+            <strong>BHOOMI-AI</strong>
+            <small>Land Intelligence</small>
+          </span>
         </div>
 
-        {mobileMenuOpen && (
-          <div className="mobile-menu">
-            {navItems.map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                className={`mobile-link ${activeSection === item.id ? "active" : ""}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-        )}
-      </header>
+        <button className="sidebar-back" type="button" onClick={() => setSidebarOpen(false)} aria-label="Close navigation">
+          <ChevronRight size={20} />
+        </button>
 
-      <dialog
-        ref={roleDialogRef}
-        className="role-picker-dialog"
-        aria-labelledby="role-picker-title"
-        onClose={() => setRolePickerOpen(false)}
-        onClick={(event) => {
-          if (event.target === roleDialogRef.current) roleDialogRef.current.close();
-        }}
-      >
-        <div className="role-picker-content">
-          <div className="role-picker-header">
-            <div>
-              <span className="section-tag">Platform Access</span>
-              <h2 id="role-picker-title">Choose your role</h2>
-              <p>Select a workspace to continue.</p>
-            </div>
-            <button
-              type="button"
-              className="role-picker-close"
-              aria-label="Close role selection"
-              onClick={() => roleDialogRef.current?.close()}
-            >
-              <X size={20} />
-            </button>
-          </div>
-          <div className="role-picker-grid">
-            {roleLinks.map(({ href, name, text, index }) => (
-              <Link
-                key={name}
-                href={href}
-                className="role-picker-card"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => roleDialogRef.current?.close()}
-              >
-                <span className="role-picker-index">{index}</span>
-                <span className="role-picker-copy">
-                  <strong>{name}</strong>
-                  <span>{text}</span>
-                </span>
-                <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </dialog>
-
-      <section id="home" className="hero-section">
-        <video
-          className="hero-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster="/images/land-hero-poster.jpg"
-          aria-label="Aerial view of infrastructure and cadastral mapping"
-        >
-          <source src="/engineers_videos.mp4" type="video/mp4" />
-        </video>
-        <div className="hero-overlay" aria-hidden="true" />
-
-        <div className="container hero-layout">
-          <div className="hero-copy">
-            <span className="eyebrow">AI-POWERED LAND ACQUISITION INTELLIGENCE</span>
-            <h1>Predict Delays Before They Happen.</h1>
-            <p>
-              BhuSetu helps government officials identify potential land acquisition delays,
-              understand the underlying risks, and take timely corrective action on infrastructure
-              projects.
-            </p>
-
-            <div className="hero-actions">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => setRolePickerOpen(true)}
-              >
-                Explore Platform
-                <ArrowRight size={18} aria-hidden="true" />
-              </button>
-              <a href="#about" className="secondary-button" target="_blank" rel="noopener noreferrer">
-                Discover How It Works
-              </a>
-            </div>
-          </div>
-
-          <aside className="hero-preview" aria-label="Sample risk dashboard">
-            <div className="preview-header">
-              <div>
-                <span className="meta-label">Project</span>
-                <strong>NH-84 Corridor</strong>
-              </div>
-              <span className="risk-chip danger">High risk</span>
-            </div>
-
-            <div className="probability-block">
-              <span className="meta-label">Demo delay signal</span>
-              <div className="probability-row">
-                <strong>74%</strong>
-                <span>Likely delay window</span>
-              </div>
-            </div>
-
-            <div className="mini-metrics" aria-label="Top risk factors">
-              <div>
-                <span>Ownership review</span>
-                <strong>84%</strong>
-              </div>
-              <div>
-                <span>Compensation</span>
-                <strong>71%</strong>
-              </div>
-              <div>
-                <span>Legal disputes</span>
-                <strong>66%</strong>
-              </div>
-            </div>
-
-            <div className="preview-footer">
-              <div className="risk-note">
-                <span className="meta-label">Recommended action</span>
-                <strong>Verify parcel eligibility and compensation status</strong>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <section id="about" className="objective-section">
-        <div className="container section-intro">
-          <span className="section-tag">Project Objective</span>
-          <h2>Making Land Acquisition More Predictable</h2>
-        </div>
-
-        <div className="container intro-grid">
-          <div className="intro-copy">
-            <p>
-              Land acquisition delays can arise from unresolved legal disputes, compensation issues,
-              ownership verification, rehabilitation and resettlement requirements, and pending
-              approvals.
-            </p>
-            <p>
-              BhuSetu uses available project, acquisition, and authorized GIS data to identify
-              potential delay risks, explain the contributing factors, and support timely
-              intervention by government officers.
-            </p>
-          </div>
-
-          <div className="objective-cards">
-            {objectiveCards.map(({ icon: Icon, title, text }) => (
-              <article key={title} className="info-card reveal-card">
-                <div className="icon-wrap">
-                  <Icon size={22} />
-                </div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="roles-section">
-        <div className="container section-intro compact">
-          <span className="section-tag">Workflow</span>
-          <h2>A Connected Workflow. Clear Accountability.</h2>
-        </div>
-
-        <div className="container role-grid">
-          {roleCards.map(({ icon: Icon, title, responsibilities, authority }) => (
-            <article key={title} className="role-card reveal-card">
-              <div className="role-topline">
-                <span className="role-icon">
-                  <Icon size={20} />
-                </span>
-                <span className="role-role">Officer</span>
-              </div>
-              <h3>{title}</h3>
-
-              <ul>
-                {responsibilities.map((item) => (
-                  <li key={item}>
-                    <CheckCircle2 size={16} />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="authority-block">
-                <span>Authority</span>
-                <p>{authority}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="role-portal-section">
-        <div className="container role-portal-header">
-          <div>
-            <span className="section-tag">Main Access</span>
-            <h2>Explore the system by role</h2>
-          </div>
-          <p>Jump directly into the dashboard or workflow assigned to each officer profile.</p>
-        </div>
-
-        <div className="container role-portal-grid">
-          {roleLinks.map(({ href, name, text, index }) => (
-            <Link key={name} href={href} className="role-portal-card reveal-card" target="_blank" rel="noopener noreferrer">
-              <span className="role-portal-index">{index}</span>
-              <div className="role-portal-body">
-                <h3>{name}</h3>
-                <p>{text}</p>
-              </div>
-              <span className="role-portal-arrow">→</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section id="workflow" className="workflow-section">
-        <div className="container section-intro">
-          <span className="section-tag">How It Works</span>
-          <h2>How BhuSetu Works</h2>
-        </div>
-
-        <div className="container workflow-diagram-shell">
-          <div className="workflow-flowbar" aria-hidden="true">
-            <span>Project Data</span>
-            <span>GIS Intelligence</span>
-            <span>AI Assessment</span>
-            <span>Officer Action</span>
-          </div>
-
-          <div className="workflow-diagram">
-            {workflowSteps.map(({ number, title, text, label, accent, icon: Icon }) => (
-              <article key={number} className={`workflow-step reveal-card workflow-step--${accent}`}>
-                <div className="step-flowline" aria-hidden="true" />
-                <div className="step-header">
-                  <span className="step-badge">{number}</span>
-                  <span className="step-pill">{label}</span>
-                </div>
-
-                <div className="step-icon">
-                  <Icon size={18} />
-                </div>
-
-                <div className="step-copy">
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <div className="container workflow-note">
-          <Building2 size={18} />
-          <p>
-            BhuSetu uses authorized GIS data where available and flags missing spatial data when a
-            non-spatial prediction must be used. It does not create or modify official parcel
-            boundaries.
-          </p>
-        </div>
-      </section>
-
-      <section id="features" className="features-section">
-        <div className="container section-intro">
-          <span className="section-tag">Capabilities</span>
-          <h2>Intelligence That Drives Timely Action</h2>
-        </div>
-
-        <div className="container feature-grid">
-          {featureCards.map(({ icon: Icon, title, text }) => (
-            <article key={title} className="feature-card reveal-card">
-              <div className="feature-icon">
-                <Icon size={22} />
-              </div>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="cta-section">
-        <div className="container cta-panel">
-          <div>
-            <span className="section-tag">Action</span>
-            <h2>Identify Risks Early. Enable Timely Action.</h2>
-            <p>
-              Bring project information, geospatial intelligence, and explainable AI together to
-              support better land acquisition decisions.
-            </p>
-          </div>
-
-          <Link href="/roles/admin" className="primary-button large-action" target="_blank" rel="noopener noreferrer">
-            Explore the Platform
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
-
-      <footer id="contact" className="site-footer">
-        <div className="container footer-shell">
-          <div className="footer-brand">
-            <a href="#home" className="brand footer-brand-mark" aria-label="BhuSetu home" target="_blank" rel="noopener noreferrer">
-              <span className="brand-mark" aria-hidden="true">
-                <span className="brand-core" />
-              </span>
-              <span className="brand-copy">
-                <strong>BhuSetu</strong>
-              </span>
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          {navigation.map(({ label, icon: Icon, href, badge }, index) => (
+            <a className={`sidebar-link ${index === 0 ? "active" : ""}`} href={href} key={label} onClick={() => setSidebarOpen(false)}>
+              <Icon size={18} strokeWidth={2} />
+              <span>{label}</span>
+              {badge && <em>{badge}</em>}
             </a>
-            <p>AI-powered land acquisition intelligence for infrastructure planning and risk response.</p>
-          </div>
+          ))}
+        </nav>
 
-          <div className="footer-links">
-            <a href="#home" target="_blank" rel="noopener noreferrer">Home</a>
-            <a href="#about" target="_blank" rel="noopener noreferrer">About</a>
-            <a href="#contact" target="_blank" rel="noopener noreferrer">Contact Us</a>
-          </div>
-
-          <div className="footer-meta">
-            <p>Smart India Hackathon prototype • 2026</p>
-            <p>hello@bhusetu.ai</p>
+        <div className="sidebar-bottom">
+          <a className="sidebar-link" href="#settings">
+            <Settings size={18} />
+            <span>Settings</span>
+          </a>
+          <div className="sidebar-status">
+            <span className="status-dot" />
+            <span><strong>System operational</strong><small>All services are online</small></span>
           </div>
         </div>
+      </aside>
 
-        <div className="container footer-bottom">
-          <span>© 2026 BhuSetu. All rights reserved.</span>
+      {sidebarOpen && <button className="sidebar-scrim" type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />}
+
+      <section className="dashboard-workspace">
+        <header className="dashboard-header">
+          <div className="header-heading">
+            <button className="mobile-menu-button" type="button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation">
+              <Menu size={21} />
+            </button>
+            <div>
+              <span className="eyebrow">Project Officer workspace</span>
+              <h1>Good morning, Khalid</h1>
+            </div>
+          </div>
+          <div className="header-actions">
+            <button className="icon-button" type="button" aria-label="Search"><Search size={18} /></button>
+            <button className="icon-button notification-button" type="button" aria-label="Notifications"><Bell size={18} /><i /></button>
+            <button className="location-pill" type="button"><MapPinned size={16} /><strong>Ujwa</strong><span>Delhi</span><ChevronDown size={15} /></button>
+            <button className="profile-pill" type="button">
+              <span className="avatar">KU</span>
+              <span><strong>Khalid Umar</strong><small>Project Officer</small></span>
+              <ChevronDown size={15} />
+            </button>
+          </div>
+        </header>
+
+        <div className="dashboard-content">
+          <div className="welcome-row">
+            <div>
+              <span className="eyebrow">Monday, 19 October 2026</span>
+              <h2>Project overview</h2>
+              <p>Track your land-acquisition projects and keep every milestone moving.</p>
+            </div>
+            <button className="primary-action" type="button" onClick={() => setRolePickerOpen(true)}>
+              <Plus size={18} /> Create Project
+            </button>
+          </div>
+
+          <div className="stat-grid" id="dashboard">
+            <article className="stat-card stat-blue"><span className="stat-icon"><FolderKanban size={19} /></span><strong>12</strong><span>Active projects</span><small><b>+3</b> this month</small></article>
+            <article className="stat-card stat-purple"><span className="stat-icon"><MapPinned size={19} /></span><strong>08</strong><span>GIS mapped</span><small><b>67%</b> of total projects</small></article>
+            <article className="stat-card stat-amber"><span className="stat-icon"><FileText size={19} /></span><strong>24</strong><span>Pending reviews</span><small><b>6</b> need attention</small></article>
+            <article className="stat-card stat-green"><span className="stat-icon"><Sparkles size={19} /></span><strong>82%</strong><span>On-track health</span><small><b>+8%</b> from last month</small></article>
+          </div>
+
+          <div className="content-grid">
+            <section className="panel projects-panel" id="projects">
+              <div className="panel-heading">
+                <div><span className="panel-kicker">Portfolio</span><h3>Recent projects</h3></div>
+                <a href="#projects">View all <ChevronRight size={15} /></a>
+              </div>
+              <div className="project-list">
+                {projects.map((project) => (
+                  <article className="project-row" key={project.code}>
+                    <span className="project-symbol"><Globe2 size={19} /></span>
+                    <div className="project-name"><strong>{project.name}</strong><small>{project.code} · {project.location}</small></div>
+                    <span className={`risk-chip risk-${project.risk.toLowerCase()}`}>{project.risk} risk</span>
+                    <div className="project-progress"><span><i style={{ width: `${project.progress}%` }} /></span><small>{project.progress}%</small></div>
+                    <span className="project-status">{project.status}</span>
+                    <ChevronRight size={17} className="row-arrow" />
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel quick-panel" id="gis">
+              <div className="panel-heading"><div><span className="panel-kicker">Shortcuts</span><h3>Quick access</h3></div></div>
+              <div className="quick-grid">
+                <button type="button" onClick={() => setRolePickerOpen(true)}><span className="quick-icon blue"><Plus size={18} /></span><strong>New project</strong><small>Start a new acquisition case</small></button>
+                <a href="#gis"><span className="quick-icon teal"><MapPinned size={18} /></span><strong>Open GIS map</strong><small>Review mapped locations</small></a>
+                <a href="#reports"><span className="quick-icon orange"><FileText size={18} /></span><strong>View reports</strong><small>Download project summaries</small></a>
+                <a href="#team"><span className="quick-icon violet"><Users size={18} /></span><strong>Team activity</strong><small>See recent collaboration</small></a>
+              </div>
+            </section>
+          </div>
+
+          <section className="insight-banner" id="notifications">
+            <div className="insight-icon"><Sparkles size={23} /></div>
+            <div><span className="panel-kicker">AI monitoring insight</span><strong>6 projects need attention this week</strong><p>Compensation and ownership verification are the leading delay factors across your portfolio.</p></div>
+            <a href="#projects">Review risks <ChevronRight size={16} /></a>
+          </section>
         </div>
-      </footer>
+      </section>
+
+      {rolePickerOpen && (
+        <div className="role-modal-backdrop" role="presentation" onClick={(event) => event.target === event.currentTarget && setRolePickerOpen(false)}>
+          <section className="role-modal" role="dialog" aria-modal="true" aria-labelledby="role-picker-title">
+            <button className="modal-close" type="button" onClick={() => setRolePickerOpen(false)} aria-label="Close role selection"><X size={19} /></button>
+            <span className="panel-kicker">Platform access</span>
+            <h2 id="role-picker-title">Choose your workspace</h2>
+            <p>Select a role to continue into the relevant BHOOMI-AI workspace.</p>
+            <div className="role-grid">
+              {roleLinks.map(({ href, title, description, icon: Icon }) => (
+                <Link href={href} className="role-option" key={title} onClick={() => setRolePickerOpen(false)}>
+                  <span><Icon size={19} /></span><strong>{title}</strong><small>{description}</small><ChevronRight size={16} />
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
-

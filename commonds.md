@@ -174,3 +174,49 @@ Check Node.js and npm versions:
 node --version
 npm --version
 ```
+
+## Project Directory Structure
+
+- `backend/`: Python backend code
+- `frontend/`: React frontend code
+- `database/`: MongoDB utility script
+- `requirements.txt`: Python dependencies
+- `package.json`: Node.js dependencies
+
+## Environment Variables
+
+- `MONGODB_URI`: MongoDB connection string
+- `MONGODB_DATABASE`: MongoDB database name
+- `NEXT_PUBLIC_API_URL`: Custom backend URL for frontend
+
+## Running the Project
+
+Start each service in a separate terminal:
+
+- Backend: `.\.venv\Scripts\Activate.ps1` followed by `python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
+- Frontend: `Push-Location frontend` followed by `npm run dev`
+
+Open:
+
+- `http://localhost:3000`
+
+## Testing
+
+- Test backend health check: `Invoke-WebRequest http://localhost:8000/api/health`
+- Test backend projects: `Invoke-RestMethod http://localhost:8000/api/projects`
+
+## Building the Frontend
+
+- Build: `npm run build`
+- Start: `npm run start`
+
+## Stop Services
+
+- Press `Ctrl + C`
+
+## Common Fixes
+
+- Clear Next.js cache: `Remove-Item -Recurse -Force frontend\.next`
+- Reinstall frontend dependencies: `Remove-Item -Recurse -Force frontend\node_modules` followed by `npm install`
+- Check Python version: `python --version`
+- Check Node.js and npm versions: `node --version` and `npm --version`
