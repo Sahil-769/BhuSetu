@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FaArrowRightLong } from "react-icons/fa6";
 import { animate } from "animejs";
 import {
   Activity,
@@ -9,6 +10,8 @@ import {
   BriefcaseBusiness,
   Building2,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Gauge,
   Landmark,
@@ -25,6 +28,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import "./page.css";
 
@@ -52,6 +56,7 @@ const objectiveCards = [
   },
 ];
 
+
 const roleCards = [
   {
     icon: BriefcaseBusiness,
@@ -59,9 +64,11 @@ const roleCards = [
     responsibilities: [
       "Create infrastructure projects and define scope.",
       "Enter project location, land area, and route details.",
-      "Track project progress and AI-generated risk summaries.",
+      "Submit GIS boundaries and track project progress.",
+      "View AI-generated risk summaries for assigned projects.",
     ],
-    authority: "Creates and tracks projects; does not manage legal acquisition decisions.",
+    authority:
+      "Creates and tracks projects; does not manage legal acquisition decisions.",
   },
   {
     icon: Landmark,
@@ -69,29 +76,48 @@ const roleCards = [
     responsibilities: [
       "Verify candidate land parcels and ownership records.",
       "Maintain acquisition, compensation, legal, and R&R updates.",
-      "Submit verified data for AI assessment and intervention planning.",
+      "Manage acquisition documents, approvals, and possession status.",
+      "Submit verified acquisition data for AI assessment.",
     ],
-    authority: "Manages assigned acquisition records and submits official acquisition updates.",
+    authority:
+      "Manages assigned acquisition records and submits official acquisition updates.",
   },
   {
     icon: UserRoundCog,
     title: "Nodal Officer",
     responsibilities: [
-      "Monitor project risk assessments and trends.",
-      "Review risk factors, GIS views, and action recommendations.",
+      "Monitor project risk assessments and risk trends.",
+      "Review risk factors, GIS views, and AI recommendations.",
       "Record interventions and follow-up progress.",
+      "Track risk changes after acquisition data is updated.",
     ],
-    authority: "Coordinates risk monitoring and interventions; does not override AI-generated scores.",
+    authority:
+      "Coordinates risk monitoring and interventions; does not manually override AI-generated scores.",
   },
   {
     icon: ShieldCheck,
-    title: "System Administrator",
+    title: "Admin",
     responsibilities: [
-      "Manage users, permissions, and role-based access.",
-      "Configure jurisdictions and project assignments.",
-      "Maintain system configuration and audit visibility.",
+      "Create, update, activate, and deactivate officer accounts.",
+      "Manage officer profiles, roles, and access permissions.",
+      "Configure jurisdictions, districts, and project assignments.",
+      "Monitor administrative activity and authorized audit records.",
     ],
-    authority: "Administers the platform, not land acquisition decisions.",
+    authority:
+      "Manages day-to-day platform administration within assigned permissions; does not make land acquisition decisions.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Super Admin",
+    responsibilities: [
+      "Oversee platform-wide administration and security settings.",
+      "Create and manage Admin accounts and their permissions.",
+      "Configure global role policies and system-level settings.",
+      "Review platform-wide audit logs and security events.",
+      "Monitor system health and AI model metadata.",
+    ],
+    authority:
+      "Has authorized platform-wide administrative privileges; does not resolve legal disputes, make acquisition decisions, or manually alter AI-generated risk scores.",
   },
 ];
 
@@ -197,6 +223,14 @@ const roleLinks = [
   { href: "/roles/super-admin", name: "Super Admin", text: "Verify projects and make final decisions.", index: "05" },
 ];
 
+const workspaceShowcase = [
+  { href: "/roles/project-officer/", name: "Project Officer", image: "project-officer.png", alt: "Project Officer dashboard showing project portfolio and GIS overview" },
+  { href: "/roles/LandAcqOfficer/", name: "Land Acquisition Officer", image: "land-acquisition.png", alt: "Land Acquisition Officer dashboard showing parcel verification and project progress" },
+  { href: "/roles/nodal-officer/", name: "Nodal Officer", image: "nodal-officer.png", alt: "Nodal Officer dashboard showing a risk watchlist and spatial risk map" },
+  { href: "/roles/admin", name: "Administrator", image: "admin.png", alt: "Administrator dashboard showing user and project overview" },
+  { href: "/roles/super-admin", name: "Super Admin", image: "super-admin.png", alt: "Super Admin dashboard showing system-wide project status and risk distribution" },
+];
+
 export default function Page() {  const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
     const savedTheme = window.localStorage.getItem("bhusetu-theme");
@@ -205,6 +239,8 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
   const [activeSection, setActiveSection] = useState("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [rolePickerOpen, setRolePickerOpen] = useState(false);
+  const [activeWorkspace, setActiveWorkspace] = useState(0);
+  const [workspaceSliderPaused, setWorkspaceSliderPaused] = useState(false);
   const roleDialogRef = useRef(null);
 
   useEffect(() => {
@@ -217,6 +253,16 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
     window.localStorage.setItem("bhusetu-theme", theme);
     document.documentElement.style.colorScheme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    if (workspaceSliderPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const timer = window.setInterval(() => {
+      setActiveWorkspace((current) => (current + 1) % workspaceShowcase.length);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [workspaceSliderPaused]);
 
   useEffect(() => {
     const sections = document.querySelectorAll("section[id]");
@@ -255,7 +301,9 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
             target.classList.add("is-visible");
             animate(target, {
               opacity: [0, 1],
-              translateY: [22, 0],
+              translateY: [28, 0],
+              scale: [0.985, 1],
+              delay: Number(target.dataset.revealDelay || 0),
               duration: 700,
               easing: "easeOutCubic",
             });
@@ -274,13 +322,15 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
     <main className="landing-page" data-theme={theme}>
       <header className="site-header">
         <div className="container nav-shell">
-          <a href="#home" className="brand" aria-label="BhuSetu home" target="_blank" rel="noopener noreferrer">
-            <span className="brand-mark" aria-hidden="true">
-              <span className="brand-core" />
-            </span>
-            <span className="brand-copy">
-              <strong>BhuSetu</strong>
-            </span>
+          <a href="#home" className="brand" aria-label="BhuSetu home" >
+            <Image
+              src="/images/logo.png"
+              alt="BhuSetu"
+              width={690}
+              height={348}
+              className="brand-logo"
+              priority
+            />
           </a>
 
           <nav className="main-nav" aria-label="Primary navigation">
@@ -289,8 +339,6 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
                 key={item.id}
                 href={`#${item.id}`}
                 className={`nav-link ${activeSection === item.id ? "active" : ""}`}
-                target="_blank"
-                rel="noopener noreferrer"
               >
                 {item.label}
               </a>
@@ -326,8 +374,6 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
                 key={item.id}
                 href={`#${item.id}`}
                 className={`mobile-link ${activeSection === item.id ? "active" : ""}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {item.label}
@@ -384,28 +430,17 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
         </div>
       </dialog>
 
-      <section id="home" className="hero-section">
-        <video
-          className="hero-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster="/images/land-hero-poster.jpg"
-          aria-label="Aerial view of infrastructure and cadastral mapping"
-        >
-          <source src="/engineers_videos.mp4" type="video/mp4" />
-        </video>
+      <section id="home" className="hero-section" >
         <div className="hero-overlay" aria-hidden="true" />
-
+        <div className="sub-hero-section">
         <div className="container hero-layout">
           <div className="hero-copy">
-            <span className="eyebrow">AI-POWERED LAND ACQUISITION INTELLIGENCE</span>
-            <h1>Predict Delays Before They Happen.</h1>
+            <h1>
+              The operating system for <span>smarter land acquisition</span>.
+            </h1>
             <p>
-              BhuSetu helps government officials identify potential land acquisition delays,
-              understand the underlying risks, and take timely corrective action on infrastructure
-              projects.
+              Bring project data, parcel intelligence, acquisition progress, and explainable risk
+              insights together in one workspace for public infrastructure teams.
             </p>
 
             <div className="hero-actions">
@@ -417,51 +452,86 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
                 Explore Platform
                 <ArrowRight size={18} aria-hidden="true" />
               </button>
-              <a href="#about" className="secondary-button" target="_blank" rel="noopener noreferrer">
-                Discover How It Works
+              <a href="#workflow" className="secondary-button">
+                See how it works
               </a>
             </div>
           </div>
-
-          <aside className="hero-preview" aria-label="Sample risk dashboard">
-            <div className="preview-header">
-              <div>
-                <span className="meta-label">Project</span>
-                <strong>NH-84 Corridor</strong>
-              </div>
-              <span className="risk-chip danger">High risk</span>
+        </div>
+        <div
+          className="container project-slider"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="BhuSetu workspaces"
+          onMouseEnter={() => setWorkspaceSliderPaused(true)}
+          onMouseLeave={() => setWorkspaceSliderPaused(false)}
+          onFocus={() => setWorkspaceSliderPaused(true)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setWorkspaceSliderPaused(false);
+          }}
+        >
+          <div className="project-slider-stage">
+            <div
+              className="project-slider-track"
+              style={{ transform: `translateX(-${activeWorkspace * (100 / workspaceShowcase.length)}%)` }}
+            >
+              {workspaceShowcase.map(({ href, name, image, alt }, index) => (
+                <Link
+                  key={name}
+                  href={href}
+                  className={`project-slide ${index === activeWorkspace ? "is-active" : ""}`}
+                  aria-label={`Open ${name} workspace`}
+                  aria-hidden={index !== activeWorkspace}
+                  tabIndex={index === activeWorkspace ? 0 : -1}
+                >
+                  <Image
+                    src={`/images/project-images/${image}`}
+                    alt={alt}
+                    width={1890}
+                    height={910}
+                    sizes="(max-width: 720px) 100vw, 1180px"
+                    priority={index === 0}
+                  />
+                  <span className="project-slide-caption">
+                    <span className="project-slide-index">0{index + 1} / 0{workspaceShowcase.length}</span>
+                    <strong>{name} Workspace</strong>
+                    <ArrowUpRight size={20} aria-hidden="true" />
+                  </span>
+                </Link>
+              ))}
             </div>
+          </div>
 
-            <div className="probability-block">
-              <span className="meta-label">Demo delay signal</span>
-              <div className="probability-row">
-                <strong>74%</strong>
-                <span>Likely delay window</span>
-              </div>
+          <div className="project-slider-controls">
+            <button
+                type="button"
+                aria-label="Show previous workspace"
+                onClick={() => setActiveWorkspace((current) => (current - 1 + workspaceShowcase.length) % workspaceShowcase.length)}
+              >
+                <ChevronLeft size={20} aria-hidden="true" />
+              </button>
+            <div className="project-slider-dots" aria-label="Choose a workspace image">
+              {workspaceShowcase.map(({ name }, index) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`project-slider-dot ${index === activeWorkspace ? "is-active" : ""}`}
+                  aria-label={`Show ${name} image`}
+                  aria-current={index === activeWorkspace ? "true" : undefined}
+                  onClick={() => setActiveWorkspace(index)}
+                />
+              ))}
             </div>
-
-            <div className="mini-metrics" aria-label="Top risk factors">
-              <div>
-                <span>Ownership review</span>
-                <strong>84%</strong>
-              </div>
-              <div>
-                <span>Compensation</span>
-                <strong>71%</strong>
-              </div>
-              <div>
-                <span>Legal disputes</span>
-                <strong>66%</strong>
-              </div>
-            </div>
-
-            <div className="preview-footer">
-              <div className="risk-note">
-                <span className="meta-label">Recommended action</span>
-                <strong>Verify parcel eligibility and compensation status</strong>
-              </div>
-            </div>
-          </aside>
+              
+              <button
+                type="button"
+                aria-label="Show next workspace"
+                onClick={() => setActiveWorkspace((current) => (current + 1) % workspaceShowcase.length)}
+              >
+                <ChevronRight size={20} aria-hidden="true" />
+              </button>
+          </div>
+        </div>
         </div>
       </section>
 
@@ -471,7 +541,7 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
           <h2>Making Land Acquisition More Predictable</h2>
         </div>
 
-        <div className="container intro-grid">
+        <div className="container i+ntro-grid">
           <div className="intro-copy">
             <p>
               Land acquisition delays can arise from unresolved legal disputes, compensation issues,
@@ -551,7 +621,7 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
                 <h3>{name}</h3>
                 <p>{text}</p>
               </div>
-              <span className="role-portal-arrow">→</span>
+              <span className="role-portal-arrow"><FaArrowRightLong /></span>
             </Link>
           ))}
         </div>
@@ -576,13 +646,13 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
               <article key={number} className={`workflow-step reveal-card workflow-step--${accent}`}>
                 <div className="step-flowline" aria-hidden="true" />
                 <div className="step-header">
-                  <span className="step-badge">{number}</span>
+                  <div className="step-icon">
+                  <Icon size={18} />
+                </div>
                   <span className="step-pill">{label}</span>
                 </div>
 
-                <div className="step-icon">
-                  <Icon size={18} />
-                </div>
+                
 
                 <div className="step-copy">
                   <h3>{title}</h3>
@@ -644,20 +714,21 @@ export default function Page() {  const [theme, setTheme] = useState(() => {
         <div className="container footer-shell">
           <div className="footer-brand">
             <a href="#home" className="brand footer-brand-mark" aria-label="BhuSetu home" target="_blank" rel="noopener noreferrer">
-              <span className="brand-mark" aria-hidden="true">
-                <span className="brand-core" />
-              </span>
-              <span className="brand-copy">
-                <strong>BhuSetu</strong>
-              </span>
+              <Image
+                src="/images/logo.png"
+                alt="BhuSetu"
+                width={690}
+                height={348}
+                className="brand-logo"
+              />
             </a>
             <p>AI-powered land acquisition intelligence for infrastructure planning and risk response.</p>
           </div>
 
           <div className="footer-links">
-            <a href="#home" target="_blank" rel="noopener noreferrer">Home</a>
-            <a href="#about" target="_blank" rel="noopener noreferrer">About</a>
-            <a href="#contact" target="_blank" rel="noopener noreferrer">Contact Us</a>
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact Us</a>
           </div>
 
           <div className="footer-meta">

@@ -28,6 +28,7 @@ const Sidebar = () => {
     SidebarConfig.roles[currentRole];
   const tabs = currentRoleData.tabs;
   const logo = currentRoleData.profileImg || "/images/logo.png";
+  const logo2 = currentRoleData.profileImg2 || "/images/logo2.png";
 
   // Close sidebar when clicking outside (mobile only)
   useEffect(() => {
@@ -89,7 +90,7 @@ const Sidebar = () => {
       `}
       >
         <aside
-  className={`bg-black text-[#e6eef6] h-screen p-5 overflow-y-auto transition-all duration-200 ${
+  className={`bg-black text-[#e6eef6] h-screen px-3 py-4 overflow-y-auto transition-all duration-200 ${
     isCollapsed ? "w-20" : "w-64"
   }`}
 >
@@ -97,23 +98,16 @@ const Sidebar = () => {
             {/* Profile Section */}
             <Link href="/">
             <div
-              className={`profile_info flex items-center gap-3 ${isCollapsed ? "" : "px-3 py-3"} rounded-3xl bg-linear-to-br from-slate-800/80 to-slate-950/80 shadow-xl ring-1 ring-white/10 mb-3 ${isCollapsed ? "justify-center" : ""} transition-all duration-300`}
+              className={`profile_info mb-1 flex items-center justify-center ${isCollapsed ? "p-0" : "px-1 py-0"} transition-all duration-300`}
             >
-              
-              <div className={`relative shrink-0 rounded-2xl ${isCollapsed ? "p-1 border border-white/10 bg-slate-900 " :" " } `}>
-                <Image
-                  src={logo}
-                  alt={`${currentRole}_profile`}
-                  width={15}
-                  height={25}
-                  className="h-10 w-10 object-cover shadow-sm"
-                />
-              </div>
-               {!isCollapsed && (
-                <div className="min-w-0">
-                <h1>BHOOMI-AI</h1>
-                </div>
-               )}
+              <Image
+                src={isCollapsed ? logo2 : logo}
+                alt="BhuSetu logo"
+                width={690}
+                height={348}
+                className={`object-contain ${isCollapsed ? "h-8 w-8" : "h-14 w-full"}`}
+                priority
+              />
             </div>
                </Link>
 
