@@ -133,7 +133,7 @@ export default function ReportDetailsPage({ params }) {
     if (report) {
       setSubmitted(
         window.localStorage.getItem(
-          `bhoomi-report-submitted:${report.projectId}`
+          `BhuSetu-report-submitted:${report.projectId}`
         ) === "true"
       );
     }
@@ -141,7 +141,7 @@ export default function ReportDetailsPage({ params }) {
 
   const submitReport = () => {
     window.localStorage.setItem(
-      `bhoomi-report-submitted:${report.projectId}`,
+      `BhuSetu-report-submitted:${report.projectId}`,
       "true"
     );
     setSubmitted(true);

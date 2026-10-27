@@ -1,8 +1,8 @@
 import { PROJECTS } from "./projects-data";
 import { getWorkflowState, recalculateProjectRisk, subscribeToWorkflow } from "../../../../components/workflowStore";
 
-const STORAGE_KEY = "bhoomi-lao-project-workspaces";
-const EVENT_NAME = "bhoomi-lao-workspace-updated";
+const STORAGE_KEY = "BhuSetu-lao-project-workspaces";
+const EVENT_NAME = "BhuSetu-lao-workspace-updated";
 
 const seedWorkspace = (project) => ({
   projectId: project.id,

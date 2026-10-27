@@ -19,7 +19,7 @@ import { Header } from '../../../component/layout/index'
 import { PROJECTS } from '../../project-officer/my-project/projects-data'
 import { applyProjectAssignments, readProjectAssignments, saveProjectAssignments } from '../../../lib/assignmentStore'
 
-const USERS_KEY = 'bhoomiUsersData'
+const USERS_KEY = 'BhuSetuUsersData'
 const ADMIN_ROLES = ['System Admin', 'Admin']
 
 const readStoredUsers = () => {

@@ -1,4 +1,4 @@
-export const AUDIT_LOGS_KEY = 'bhoomiAuditLogs'
+export const AUDIT_LOGS_KEY = 'BhuSetuAuditLogs'
 
 const safeDate = (value) => {
   const date = new Date(value)
@@ -75,7 +75,7 @@ export const buildAuditLogs = ({ users = [], projects = [], assignments = {} }) 
       role: user.role,
       action: 'Successful login',
       module: 'Login activity',
-      target: 'BHOOMI-AI portal',
+      target: 'BhuSetu portal',
       remarks: 'Login timestamp from the user profile record.',
       device: user.device,
       ip: user.ip

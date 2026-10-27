@@ -96,31 +96,33 @@ export default function CreateProjectPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [submitState, setSubmitState] = useState({ loading: false, error: "" });
 
-  const [formData, setFormData] = useState({
-    projectId: "BH-2026-AUTO",
-    projectName: "Delhi-Meerut Highway Expansion",
-    projectType: "Highway",
-    description: "Highway corridor expansion to improve regional access, freight movement, and road safety across the connected villages.",
-    department: "NHAI",
+  const [formData, setFormData] = useState(
+    {
+  projectId: "DM-2026-METRO",
+  projectName: "Delhi Metro Phase IV Extension",
+  projectType: "Metro Rail",
+  description: "Metro rail network extension to improve urban connectivity, reduce road congestion, and provide efficient public transportation.",
+  department: "DMRC",
 
-    state: "Delhi",
-    district: "Delhi",
-    tehsil: "New Delhi",
-    villages: "Baprola, Najafgarh",
+  state: "Delhi",
+  district: "South West Delhi",
+  tehsil: "Najafgarh",
+  villages: "Dichaon Kalan, Ghuman Hera",
 
-    locationType: "linear",
-    latitude: "",
-    longitude: "",
-    routeLength: "",
-    calculatedArea: "",
-    geometry: null,
-    geometryType: "",
+  locationType: "linear",
+  latitude: "",
+  longitude: "",
+  routeLength: "",
+  calculatedArea: "",
+  geometry: null,
+  geometryType: "",
 
-    requiredLandArea: "125",
-    unit: "Hectare",
-    acquisitionRequirement: "Land acquisition for highway widening, service roads, drainage, and safety infrastructure.",
-    purpose: "Improve regional connectivity and reduce congestion through a safer expanded highway corridor.",
-  });
+  requiredLandArea: "45",
+  unit: "Hectare",
+  acquisitionRequirement: "Land acquisition for metro tracks, stations, depots, access roads, and supporting infrastructure.",
+  purpose: "Improve public transportation connectivity and reduce travel time for commuters in Delhi."
+}
+);
 
   const [documents, setDocuments] = useState([]);
   const [errors, setErrors] = useState({});
@@ -958,9 +960,6 @@ export default function CreateProjectPage() {
 
                 <button
   type="submit"
-  onClick={() => {
-    window.location.reload();
-  }}
   className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-sm hover:bg-blue-700"
 >
   Submit Project

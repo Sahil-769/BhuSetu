@@ -1,4 +1,4 @@
-export const PROJECT_ASSIGNMENTS_KEY = 'bhoomiProjectAssignments'
+export const PROJECT_ASSIGNMENTS_KEY = 'BhuSetuProjectAssignments'
 
 export const readProjectAssignments = () => {
   if (typeof window === 'undefined') return {}

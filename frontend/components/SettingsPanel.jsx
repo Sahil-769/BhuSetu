@@ -142,7 +142,7 @@ export default function SettingsPanel({ role = "project-officer", title = "Setti
               <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-2">
                 <div className="flex items-center gap-1.5 text-slate-700">
                   <Layers3 className="h-3.5 w-3.5" />
-                  <span className="text-xs font-medium">BHOOMI-AI Version</span>
+                  <span className="text-xs font-medium">BhuSetu Version</span>
                 </div>
                 <span className="text-xs font-medium text-slate-900">{settings.appVersion || "v1.0"}</span>
               </div>

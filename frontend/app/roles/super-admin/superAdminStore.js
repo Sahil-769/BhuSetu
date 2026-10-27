@@ -1,18 +1,18 @@
 import { PROJECTS } from "../project-officer/my-project/projects-data";
 
-const STORAGE_KEY = "bhoomi-super-admin-state";
-const EVENT_NAME = "bhoomi-super-admin-updated";
+const STORAGE_KEY = "BhuSetu-super-admin-state";
+const EVENT_NAME = "BhuSetu-super-admin-updated";
 
 const initialState = {
   admins: [
-    { id: "admin-1", name: "Rakesh Sharma", email: "rakesh.sharma@bhoomi.ai", role: "Admin", jurisdiction: "Uttar Pradesh", status: "Active" },
-    { id: "admin-2", name: "Priya Menon", email: "priya.menon@bhoomi.ai", role: "Admin", jurisdiction: "Maharashtra", status: "Active" },
+    { id: "admin-1", name: "Rakesh Sharma", email: "rakesh.sharma@bhusetu.ai", role: "Admin", jurisdiction: "Uttar Pradesh", status: "Active" },
+    { id: "admin-2", name: "Priya Menon", email: "priya.menon@bhusetu.ai", role: "Admin", jurisdiction: "Maharashtra", status: "Active" },
   ],
   users: [
-    { id: "user-1", name: "Ali Arzan Zaidi", email: "ali.zaidi@bhoomi.ai", role: "Project Officer", jurisdiction: "Delhi", status: "Active", projects: [1, 2] },
-    { id: "user-2", name: "Rajesh Kumar", email: "rajesh.kumar@bhoomi.ai", role: "LAO", jurisdiction: "Uttar Pradesh", status: "Active", projects: [1, 3] },
-    { id: "user-3", name: "Amit Sharma", email: "amit.sharma@bhoomi.ai", role: "Nodal Officer", jurisdiction: "Uttar Pradesh", status: "Active", projects: [1, 10] },
-    { id: "user-4", name: "Sahil Alvi", email: "sahil.alvi@bhoomi.ai", role: "Nodal Officer", jurisdiction: "Delhi", status: "Active", projects: [] },
+    { id: "user-1", name: "Ali Arzan Zaidi", email: "ali.zaidi@bhusetu.ai", role: "Project Officer", jurisdiction: "Delhi", status: "Active", projects: [1, 2] },
+    { id: "user-2", name: "Rajesh Kumar", email: "rajesh.kumar@bhusetu.ai", role: "LAO", jurisdiction: "Uttar Pradesh", status: "Active", projects: [1, 3] },
+    { id: "user-3", name: "Amit Sharma", email: "amit.sharma@bhusetu.ai", role: "Nodal Officer", jurisdiction: "Uttar Pradesh", status: "Active", projects: [1, 10] },
+    { id: "user-4", name: "Sahil Alvi", email: "sahil.alvi@bhusetu.ai", role: "Nodal Officer", jurisdiction: "Delhi", status: "Active", projects: [] },
   ],
   roles: [
     { id: "super-admin", name: "Super Admin", description: "Global platform governance", permissions: ["all"] },

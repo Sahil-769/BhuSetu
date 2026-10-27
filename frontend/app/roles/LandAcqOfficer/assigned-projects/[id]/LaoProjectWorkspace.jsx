@@ -90,7 +90,7 @@ export default function LaoProjectWorkspace() {
   }
 
   if (!project) {
-    return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm"><h1 className="text-2xl font-semibold text-slate-900">Project not found</h1><Link href="/roles/LandAcqOfficer/my-project" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><ArrowLeft className="h-4 w-4" />Back to assigned projects</Link></div></div>;
+    return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm"><h1 className="text-2xl font-semibold text-slate-900">Project not found</h1><Link href="/roles/LandAcqOfficer/assigned-projects" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><ArrowLeft className="h-4 w-4" />Back to assigned projects</Link></div></div>;
   }
 
   const workspaceProjectId = localProject?.id || project.id;

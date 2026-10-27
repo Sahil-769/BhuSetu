@@ -46,7 +46,7 @@ export default function VerificationPage({ params }) {
   const submitOutcome = (value) => {
     if (value === "Verified" && !allChecksCompleted) return;
     if (value === "Verified") {
-      window.localStorage.setItem(`bhoomi-verification:${project.projectId}`, value);
+      window.localStorage.setItem(`BhuSetu-verification:${project.projectId}`, value);
       router.push(`/roles/LandAcqOfficer/my-project/${project.id}`);
       return;
     }

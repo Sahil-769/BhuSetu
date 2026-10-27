@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   ArrowLeft,
@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 
 import { Header } from "@/app/component/layout/index";
+import { getWorkflowState, subscribeToWorkflow } from "@/components/workflowStore";
+import { api } from "@/lib/api";
 import { PROJECTS, projectTypeMeta } from "../projects-data";
 
 const ACTIVITY_FILTERS = [
@@ -156,7 +158,7 @@ const projectActivities = [
     title: "GIS Data Processed",
     description: "Project boundary and location data were processed for geospatial review.",
     timestamp: "2026-09-05T11:58:00",
-    actor: { name: "BHOOMI-AI", role: "Automated System" },
+    actor: { name: "BhuSetu", role: "Automated System" },
     status: "completed",
   },
   {
@@ -197,9 +199,9 @@ const projectActivities = [
     type: "risk_generated",
     group: "risk",
     title: "AI Risk Assessment Generated",
-    description: "BHOOMI-AI generated the project delay-risk assessment for the active acquisition workflow.",
+    description: "BhuSetu generated the project delay-risk assessment for the active acquisition workflow.",
     timestamp: "2026-09-05T12:05:00",
-    actor: { name: "BHOOMI-AI", role: "Automated System" },
+    actor: { name: "BhuSetu", role: "Automated System" },
     status: "completed",
     risk: { probability: 82, category: "HIGH" },
     factors: [
@@ -257,7 +259,7 @@ const projectActivities = [
     title: "Risk Reduced",
     description: "AI risk profile improved after legal dispute status updated to resolved.",
     timestamp: "2026-09-06T11:10:00",
-    actor: { name: "BHOOMI-AI", role: "Automated System" },
+    actor: { name: "BhuSetu", role: "Automated System" },
     status: "completed",
     risk: {
       previousProbability: 61,
@@ -548,8 +550,45 @@ export default function ProjectDetailsPage() {
     return { total: projectActivities.length, officerActions, riskUpdates, systemEvents, lastUpdated };
   }, []);
 
-  const projectId = Number(params?.id ?? 0);
-  const project = PROJECTS.find((item) => item.id === Number(projectId));
+  const projectId = String(params?.id ?? "");
+  const [createdProject, setCreatedProject] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    const syncProject = () => {
+      const storedProject = getWorkflowState().projects.find(
+        (item) => String(item.id) === projectId || String(item.projectId) === projectId
+      );
+      if (storedProject) {
+        setCreatedProject(storedProject);
+        return;
+      }
+
+      const loadProject = /^\d+$/.test(projectId)
+        ? api.getProject(projectId)
+        : api.getProjectByCode(projectId);
+      loadProject.then((backendProject) => {
+        if (active) {
+          setCreatedProject({
+            ...backendProject,
+            riskProbability: backendProject.riskProbability ?? backendProject.assessment?.delay_probability,
+            riskCategory: backendProject.riskCategory ?? backendProject.assessment?.risk_category,
+          });
+        }
+      }).catch(() => {});
+    };
+
+    Promise.resolve().then(syncProject);
+    const unsubscribe = subscribeToWorkflow(syncProject);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [projectId]);
+
+  const project =
+    PROJECTS.find((item) => String(item.id) === projectId || item.projectId === projectId) ||
+    createdProject;
 
   if (!project) {
     return (

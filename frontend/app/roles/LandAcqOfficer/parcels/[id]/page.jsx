@@ -11,7 +11,7 @@ import {
 
 export default function ParcelVerification({ params }) {
   const { id } = React.use(params);
-  const storageKey = `bhoomi-parcels:${id}`;
+  const storageKey = `BhuSetu-parcels:${id}`;
   const [parcels, setParcels] = useState([]);
   const [form, setForm] = useState({
     parcelId: "",

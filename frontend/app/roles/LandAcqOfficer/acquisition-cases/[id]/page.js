@@ -19,12 +19,12 @@ export default function AcquisitionCasePage({ params }) {
 
   useEffect(() => {
     setVerificationComplete(
-      window.localStorage.getItem(`bhoomi-case-verified:${id}`) === "true"
+      window.localStorage.getItem(`BhuSetu-case-verified:${id}`) === "true"
     );
   }, [id]);
 
   const submitVerification = () => {
-    window.localStorage.setItem(`bhoomi-case-verified:${id}`, "true");
+    window.localStorage.setItem(`BhuSetu-case-verified:${id}`, "true");
     setVerificationComplete(true);
     setNotice("Verification completed and submitted successfully.");
     window.setTimeout(() => setNotice(""), 3500);

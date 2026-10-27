@@ -41,7 +41,7 @@ const notificationsData = [
     message:
       "Nodal Officer has requested re-verification of 7 parcels due to discrepancies in land ownership records.",
     project: "Rohini Sector 18 Drainage Expansion",
-    projectId: "BHOOMI-2026-142",
+    projectId: "BhuSetu-2026-142",
     sender: "Amit Sharma · Nodal Officer",
     date: "10 Sept 2026, 10:15 am",
     unread: true,

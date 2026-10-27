@@ -1,5 +1,5 @@
 
-# BHOOMI-AI SIH Demo Runbook
+# BhuSetu Demo Runbook
 
 ## Demo Goal
 
@@ -16,7 +16,13 @@ Recommended duration: 7-10 minutes.
 ### Start Backend
 
 Open PowerShell Terminal 1 from the project root:
-
+1. cd D:\coding_zone\BhuSetu\t-hacks-9.0\t-hacks-90-geometrix-sentinel\backend
+2. python -m pip install virtualenv
+3. virtualenv .venv
+4. .\.venv\Scripts\Activate.ps1
+5. pip install -r requirements.txt
+6. python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+7. localhost:8000/api/health
 ```powershell
 .\.venv\Scripts\Activate.ps1
 Push-Location backend
@@ -227,7 +233,7 @@ Say:
 
 ## Judge Narration
 
-> BHOOMI-AI connects project geography with land-acquisition administration. The Project Officer draws the route or boundary, and the system stores it as GeoJSON. The LAO records parcel, ownership, compensation, legal, R&R, approval, and document information. AI predicts delay risk and explains the causes. The Nodal Officer monitors and recommends closure. The Super Admin performs final administrative review and either verifies the project, making it Verified and Closed, or sends it back with a correction reason.
+> BhuSetu connects project geography with land-acquisition administration. The Project Officer draws the route or boundary, and the system stores it as GeoJSON. The LAO records parcel, ownership, compensation, legal, R&R, approval, and document information. AI predicts delay risk and explains the causes. The Nodal Officer monitors and recommends closure. The Super Admin performs final administrative review and either verifies the project, making it Verified and Closed, or sends it back with a correction reason.
 
 ## Important Judge Answers
 

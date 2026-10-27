@@ -366,7 +366,7 @@ export default function Page() {
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Decision support map</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">BHOOMI-AI GIS risk map</h1>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">BhuSetu GIS risk map</h1>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">

@@ -1,7 +1,7 @@
-export const USERS_KEY = 'bhoomiUsersData'
-export const JURISDICTIONS_KEY = 'bhoomiJurisdictionsData'
-export const ADMIN_ACTIVITY_KEY = 'bhoomiAdminActivity'
-export const PROJECT_ASSIGNMENTS_KEY = 'bhoomiProjectAssignments'
+export const USERS_KEY = 'BhuSetuUsersData'
+export const JURISDICTIONS_KEY = 'BhuSetuJurisdictionsData'
+export const ADMIN_ACTIVITY_KEY = 'BhuSetuAdminActivity'
+export const PROJECT_ASSIGNMENTS_KEY = 'BhuSetuProjectAssignments'
 
 export const ROLE_OPTIONS = ['Project Officer', 'Land Acquisition Officer', 'Nodal Officer', 'System Admin']
 export const STATUS_OPTIONS = ['Active', 'Inactive', 'Pending', 'Suspended']
@@ -63,7 +63,7 @@ export const normalizeUser = (user) => ({
   department: user.department || 'Project Management',
   phone: user.phone || '+91 00000 00000',
   district: user.district || 'Unassigned',
-  email: user.email || `${user.name?.toLowerCase().replace(/\s+/g, '.')}@bhoomi.gov.in`,
+  email: user.email || `${user.name?.toLowerCase().replace(/\s+/g, '.')}@bhusetu.gov.in`,
   assignedProjects: Array.isArray(user.assignedProjects) ? user.assignedProjects : [],
   permissions: Array.isArray(user.permissions) ? user.permissions : [],
   recentActivity: Array.isArray(user.recentActivity) ? user.recentActivity : [],

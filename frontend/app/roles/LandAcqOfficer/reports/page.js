@@ -102,7 +102,7 @@ export default function ReportsPage() {
     link.href = URL.createObjectURL(
       new Blob([csv], { type: "text/csv;charset=utf-8;" })
     );
-    link.download = "bhoomi-lao-report.csv";
+    link.download = "bhusetu-lao-report.csv";
     link.click();
     URL.revokeObjectURL(link.href);
 

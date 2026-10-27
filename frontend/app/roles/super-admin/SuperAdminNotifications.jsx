@@ -33,7 +33,7 @@ function EmptyState({ onClear }) {
 }
 
 export default function SuperAdminNotifications() {
-  const [notifications, setNotifications] = useState(() => getSuperAdminState().notifications.map((item) => ({ ...item, isRead: item.read, description: item.detail, actor: { name: "BHOOMI-AI", role: "System" }, timestamp: item.time, projectHref: item.projectId ? `/roles/super-admin/projects/${item.projectId}` : null })));
+  const [notifications, setNotifications] = useState(() => getSuperAdminState().notifications.map((item) => ({ ...item, isRead: item.read, description: item.detail, actor: { name: "BhuSetu", role: "System" }, timestamp: item.time, projectHref: item.projectId ? `/roles/super-admin/projects/${item.projectId}` : null })));
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const unreadCount = useMemo(() => notifications.filter((item) => !item.isRead).length, [notifications]);

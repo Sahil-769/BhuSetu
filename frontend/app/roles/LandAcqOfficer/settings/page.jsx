@@ -19,7 +19,7 @@ export default function Page() {
 
   const officerProfile = {
     name: "Umar Khalid",
-    email: "Umar.Khalid@bhoomi-ai.in",
+    email: "Umar.Khalid@bhusetu.in",
     phone: "+91 98765 43210",
     role: "Land Acquisition Officer",
   };

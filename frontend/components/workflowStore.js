@@ -1,7 +1,7 @@
 import { PROJECTS as SEEDED_PROJECTS } from "../app/roles/LandAcqOfficer/assigned-projects/projects-data";
 
-const STORAGE_KEY = "bhoomi-ai-workflow-state";
-const EVENT_NAME = "bhoomi-ai-workflow-updated";
+const STORAGE_KEY = "BhuSetu-ai-workflow-state";
+const EVENT_NAME = "BhuSetu-ai-workflow-updated";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 

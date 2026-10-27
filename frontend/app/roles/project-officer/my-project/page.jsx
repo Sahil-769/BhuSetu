@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { Header } from "@/app/component/layout/index";
+import { getWorkflowState, subscribeToWorkflow } from "@/components/workflowStore";
 import {
   PROJECTS,
   districtOptions,
@@ -214,6 +215,7 @@ function EmptyState({ onClear }) {
 }
 
 export default function Page() {
+  const [projects, setProjects] = useState(PROJECTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -222,14 +224,20 @@ export default function Page() {
   const [sortBy, setSortBy] = useState("updated");
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => {
+    const syncProjects = () => setProjects(getWorkflowState().projects);
+    Promise.resolve().then(syncProjects);
+    return subscribeToWorkflow(syncProjects);
+  }, []);
+
   const summaryCounts = useMemo(
     () => ({
-      total: PROJECTS.length,
-      active: PROJECTS.filter((project) => ["Pending LAO Verification", "Under Acquisition", "On Hold"].includes(project.status)).length,
-      underAcquisition: PROJECTS.filter((project) => project.status === "Under Acquisition").length,
-      highRisk: PROJECTS.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
+      total: projects.length,
+      active: projects.filter((project) => ["Pending LAO Verification", "Under Acquisition", "On Hold"].includes(project.status)).length,
+      underAcquisition: projects.filter((project) => project.status === "Under Acquisition").length,
+      highRisk: projects.filter((project) => ["High", "Critical"].includes(project.riskCategory)).length,
     }),
-    []
+    [projects]
   );
 
   const clearFilters = () => {
@@ -245,7 +253,7 @@ export default function Page() {
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const result = PROJECTS.filter((project) => {
+    const result = projects.filter((project) => {
       const matchesSearch =
         !normalizedQuery ||
         [
@@ -286,7 +294,7 @@ export default function Page() {
     });
 
     return result;
-  }, [districtFilter, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
+  }, [districtFilter, projects, riskFilter, searchQuery, sortBy, statusFilter, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
   const pageToRender = Math.min(currentPage, totalPages);
@@ -416,7 +424,7 @@ export default function Page() {
 
           <div className="mt-4 flex flex-col items-start justify-between gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center">
             <p className="text-xs text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{PROJECTS.length}</span> projects
+              Showing <span className="font-semibold text-slate-900">{filteredProjects.length}</span> of <span className="font-semibold text-slate-900">{projects.length}</span> projects
             </p>
             <button
               type="button"

@@ -1,5 +1,6 @@
 
 import "./globals.css";
+import BhuSetuStorageMigration from "../components/BhuSetuStorageMigration";
 
 export const metadata = {
   title: "BhuSetu | Land Acquisition Intelligence",
@@ -10,7 +11,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        <BhuSetuStorageMigration>{children}</BhuSetuStorageMigration>
       </body>
     </html>
   );

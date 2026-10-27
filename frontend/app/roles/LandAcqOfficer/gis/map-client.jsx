@@ -69,7 +69,7 @@ export default function ProjectMap() {
       <main className="page-shell">
         <div className="page-container">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <Link href={`/roles/LandAcqOfficer/my-project/${project.id}`} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+            <Link href={`/roles/LandAcqOfficer/assigned-projects/${project.id}`} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
               <ArrowLeft className="h-4 w-4" />
               Back to project
             </Link>

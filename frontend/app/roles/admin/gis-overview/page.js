@@ -29,7 +29,7 @@ const CircleMarker = dynamic(() => import('react-leaflet').then((module) => modu
 const Polygon = dynamic(() => import('react-leaflet').then((module) => module.Polygon), { ssr: false })
 const Polyline = dynamic(() => import('react-leaflet').then((module) => module.Polyline), { ssr: false })
 
-const USERS_KEY = 'bhoomiUsersData'
+const USERS_KEY = 'BhuSetuUsersData'
 const ADMIN_ROLES = ['System Admin', 'Admin']
 const ALL = 'All'
 

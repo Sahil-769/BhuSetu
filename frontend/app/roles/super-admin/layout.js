@@ -7,7 +7,7 @@ import {
 
 export const metadata = {
   title: "Super Admin",
-  description: "Bhoomi AI super administration",
+  description: "BhuSetu super administration",
 };
 
 export default function SuperAdminLayout({ children }) {

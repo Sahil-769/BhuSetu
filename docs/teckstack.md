@@ -1,4 +1,4 @@
-# BHOOMI-AI Technology Stack
+# BhuSetu Technology Stack
 
 ## 1. Overall Architecture
 
@@ -73,11 +73,11 @@ Important routes include:
 Important frontend demo keys include:
 
 ```text
-bhoomi-ai-workflow-state
-bhoomi-super-admin-state
-bhoomiUsersData
-bhoomiJurisdictionsData
-bhoomiAdminActivity
+BhuSetu-ai-workflow-state
+BhuSetu-super-admin-state
+BhuSetuUsersData
+BhuSetuJurisdictionsData
+BhuSetuAdminActivity
 ```
 
 The localStorage path is a demo fallback. The backend should be the authoritative source in production.
@@ -183,12 +183,12 @@ Main API groups:
 
 **Used for:** Default development and demonstration database.
 
-**Why chosen:** SQLite is zero-configuration, portable, and sufficient for local development and an SIH prototype.
+**Why chosen:** SQLite is zero-configuration, portable, and sufficient for local development and an  prototype.
 
 Default database file:
 
 ```text
-bhoomi_ai.db
+bhusetu.db
 ```
 
 ### Main database records
@@ -284,10 +284,10 @@ Demo fallback            Browser localStorage
 Final verification       Super Admin workflow endpoint and audit activity
 ```
 
-## 9. Why This Stack Fits BHOOMI-AI
+## 9. Why This Stack Fits BhuSetu
 
 - It is open source and cost-effective for a prototype.
-- It supports rapid development for an SIH demonstration.
+- It supports rapid development for an  demonstration.
 - It combines strong web development and data-science ecosystems.
 - It uses standard REST, JSON, and GeoJSON formats.
 - It keeps GIS, prediction, database, and UI responsibilities separated.

@@ -7,14 +7,14 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, create_engine, func, select
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, create_engine, delete, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 from .ml.predictor import Predictor
 
 logging.basicConfig(level=logging.INFO)
 ROOT = Path(__file__).resolve().parents[2]
-database_url = os.getenv("DATABASE_URL", f"sqlite:///{ROOT / 'bhoomi_ai.db'}")
+database_url = os.getenv("DATABASE_URL", f"sqlite:///{ROOT / 'bhusetu.db'}")
 engine = create_engine(database_url, connect_args={"check_same_thread": False} if database_url.startswith("sqlite") else {})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 model_path = os.getenv("MODEL_PATH", str(ROOT / "machine-learning-algo" / "land_acquisition_xgb_model.pkl"))
@@ -113,6 +113,37 @@ class ProjectIn(BaseModel):
     status: str = "Pending LAO Verification"
 
 
+class ProjectRefreshIn(BaseModel):
+    projectId: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    description: str = ""
+    type: str = Field(min_length=1)
+    state: str = Field(min_length=1)
+    district: str = Field(min_length=1)
+    village: str | None = None
+    tehsil: str | None = None
+    requiredLandArea: float = Field(gt=0)
+    landUnit: str = "hectares"
+    geometry: dict | None = None
+    status: str = "Draft"
+    workflowStatus: str | None = None
+    nodalReviewCompleted: bool = False
+    submittedAt: str | None = None
+    submittedBy: str | None = None
+    correctionReason: str | None = None
+    verification: dict | None = None
+    workflowActivity: list[dict] = Field(default_factory=list)
+    decisionHistory: list[dict] = Field(default_factory=list)
+    documents: list[dict] = Field(default_factory=list)
+    acquisitionSummary: dict = Field(default_factory=dict)
+    analysisInputs: dict = Field(default_factory=dict)
+    riskProbability: float | None = None
+    riskCategory: str | None = None
+    assessment: dict = Field(default_factory=dict)
+    createdAt: str | None = None
+    updatedAt: str | None = None
+
+
 class InterventionIn(BaseModel):
     project_id: int
     intervention_type: str
@@ -173,7 +204,7 @@ def demo_project_data(payload: ProjectIn) -> dict:
     return {"acquisition": {"ownership": "Pending verification", "compensation": "Not started", "legal": "Dispute Identified", "rr": "Not started", "approvals": "In review", "documents": "Available", "possession": "Not started"}, "parcels": parcels, "documents": documents, "acquisitionSummary": {"totalParcels": len(parcels), "verifiedParcels": 1, "pendingVerification": len(parcels) - 1, "ownershipIssues": 2, "compensationProgress": 35, "legalCases": 1, "rrStatus": "In progress", "approvals": "In review", "possessionStatus": "Not started"}}
 
 
-app = FastAPI(title="BHOOMI-AI API", version="1.0.0", docs_url="/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="BhuSetu API", version="1.0.0", docs_url="/docs", openapi_url="/api/openapi.json")
 origins = [item.strip() for item in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"], allow_credentials=True)
 
@@ -229,6 +260,95 @@ def get_project_by_code(project_code: str, session: Session = Depends(db)):
     if project.risk_probability is None or project.risk_category is None:
         _save_prediction(session, project, ["project_detail_refresh"])
     return serialize_project(project)
+
+
+@app.put("/api/projects/by-code/{project_code}")
+def refresh_project_by_code(project_code: str, payload: ProjectRefreshIn, session: Session = Depends(db)):
+    if payload.projectId != project_code:
+        raise HTTPException(422, "projectId must match the project code in the URL")
+
+    project = session.scalar(select(Project).where(Project.project_id == project_code))
+    if project is None:
+        project = Project(project_id=project_code)
+        session.add(project)
+
+    def parse_timestamp(value: str | None, fallback: datetime) -> datetime:
+        if not value:
+            return fallback
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as error:
+            raise HTTPException(422, f"Invalid timestamp: {value}") from error
+
+    now = datetime.now(timezone.utc)
+    assessment_data = payload.assessment
+    project.name = payload.name
+    project.type = payload.type
+    project.state = payload.state
+    project.district = payload.district
+    project.village = payload.village
+    project.tehsil = payload.tehsil
+    project.required_land_area = payload.requiredLandArea
+    project.geometry = payload.geometry
+    project.status = payload.status
+    project.risk_probability = payload.riskProbability
+    project.risk_category = payload.riskCategory
+    project.created_at = parse_timestamp(payload.createdAt, now)
+    project.updated_at = parse_timestamp(payload.updatedAt, now)
+    project.acquisition_data = {
+        "description": payload.description,
+        "landUnit": payload.landUnit,
+        "workflow": {
+            "workflowStatus": payload.workflowStatus or payload.status,
+            "nodalReviewCompleted": payload.nodalReviewCompleted,
+            "submittedAt": payload.submittedAt,
+            "submittedBy": payload.submittedBy,
+            "correctionReason": payload.correctionReason,
+            "verification": payload.verification,
+            "workflowActivity": payload.workflowActivity,
+        },
+        "decisionHistory": payload.decisionHistory,
+        "documents": payload.documents,
+        "acquisitionSummary": payload.acquisitionSummary,
+        "analysisInputs": payload.analysisInputs,
+        "latestAssessment": assessment_data,
+    }
+
+    session.flush()
+    if assessment_data:
+        session.execute(delete(Assessment).where(Assessment.project_id == project.id))
+        session.add(Assessment(
+            project_id=project.id,
+            delay_probability=assessment_data.get("delay_probability", payload.riskProbability or 0),
+            risk_category=assessment_data.get("risk_category", payload.riskCategory or "LOW"),
+            risk_factors=assessment_data.get("top_risk_factors", []),
+            factor_importance=assessment_data.get("factor_importance", {}),
+            recommendations=assessment_data.get("recommendations", []),
+            risk_trend=assessment_data.get("risk_trend", "STABLE"),
+            model_version=assessment_data.get("model_version", "snapshot"),
+            prediction_source=assessment_data.get("prediction_source", "SNAPSHOT"),
+            confidence=assessment_data.get("confidence"),
+            created_at=parse_timestamp(assessment_data.get("last_updated"), now),
+        ))
+    else:
+        session.execute(delete(Assessment).where(Assessment.project_id == project.id))
+
+    session.commit()
+    session.refresh(project)
+    return serialize_project(project)
+
+
+@app.delete("/api/projects/by-code/{project_code}")
+def delete_project_by_code(project_code: str, session: Session = Depends(db)):
+    project = session.scalar(select(Project).where(Project.project_id == project_code))
+    if not project:
+        raise HTTPException(404, "Project not found")
+
+    session.execute(delete(RiskHistory).where(RiskHistory.project_id == project.id))
+    session.execute(delete(Intervention).where(Intervention.project_id == project.id))
+    session.delete(project)
+    session.commit()
+    return {"deleted": True, "id": project.id, "projectId": project_code}
 
 
 @app.get("/api/projects/{project_id}/geometry")

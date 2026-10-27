@@ -1,6 +1,6 @@
-# BHOOMI-AI
+# BhuSetu
 
-BHOOMI-AI is a land-acquisition monitoring platform that combines GIS project mapping, acquisition workflow management, and explainable delay-risk prediction.
+BhuSetu is a land-acquisition monitoring platform that combines GIS project mapping, acquisition workflow management, and explainable delay-risk prediction.
 
 ## Run The Complete Project
 
@@ -154,7 +154,7 @@ Risk categories are calculated as:
 75-100% CRITICAL
 ```
 
-If the trained model is unavailable, BHOOMI-AI uses an explainable rule-based fallback. The fallback gives weighted importance to issues such as:
+If the trained model is unavailable, BhuSetu uses an explainable rule-based fallback. The fallback gives weighted importance to issues such as:
 
 ```text
 Legal dispute or case pending       20 points
@@ -189,7 +189,7 @@ PUT /api/projects/{project_id}/acquisition
 By default, the FastAPI backend uses SQLite:
 
 ```text
-bhoomi_ai.db
+bhusetu.db
 ```
 
 The database contains the following main records:
@@ -204,7 +204,7 @@ interventions    Nodal intervention records
 The database URL can be changed with:
 
 ```powershell
-$env:DATABASE_URL = "sqlite:///D:/data/bhoomi_ai.db"
+$env:DATABASE_URL = "sqlite:///D:/data/bhusetu.db"
 ```
 
 ### Frontend local demo storage
@@ -214,11 +214,11 @@ When the backend is unavailable, the frontend uses browser `localStorage` for de
 Important keys include:
 
 ```text
-bhoomi-ai-workflow-state       Projects, acquisition, interventions and activity
-bhoomi-super-admin-state       Super Admin projects and verification state
-bhoomiUsersData                User records
-bhoomiJurisdictionsData        Jurisdiction records
-bhoomiAdminActivity            Admin audit activity
+BhuSetu-ai-workflow-state       Projects, acquisition, interventions and activity
+BhuSetu-super-admin-state       Super Admin projects and verification state
+BhuSetuUsersData                User records
+BhuSetuJurisdictionsData        Jurisdiction records
+BhuSetuAdminActivity            Admin audit activity
 ```
 
 The frontend fallback is useful for demonstrations, but production data should be stored through the backend API and database.
@@ -286,7 +286,7 @@ flowchart TD
 
 ## Judge-Friendly Explanation
 
-> BHOOMI-AI connects the physical location of a land project with its administrative acquisition data. The Project Officer draws the route or boundary, the system stores it as GeoJSON, and the LAO records parcel and acquisition progress. The AI evaluates legal, ownership, compensation, R&R, approval, document, and GIS factors to predict delay risk with explanations and recommendations. The Nodal Officer monitors and recommends closure, while the Super Admin performs the final administrative verification or sends the project back for correction.
+> BhuSetu connects the physical location of a land project with its administrative acquisition data. The Project Officer draws the route or boundary, the system stores it as GeoJSON, and the LAO records parcel and acquisition progress. The AI evaluates legal, ownership, compensation, R&R, approval, document, and GIS factors to predict delay risk with explanations and recommendations. The Nodal Officer monitors and recommends closure, while the Super Admin performs the final administrative verification or sends the project back for correction.
 
 ## Important Data Integrity Rule
 
