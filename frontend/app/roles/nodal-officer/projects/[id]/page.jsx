@@ -137,7 +137,7 @@ const defaultDecisionHistory = [
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const [workflow, setWorkflow] = useState(() => getWorkflowState());
+  const [workflow, setWorkflow] = useState({ projects: PROJECTS });
   const [apiProject, setApiProject] = useState(null);
   const [apiAssessment, setApiAssessment] = useState(null);
   const [apiRiskHistory, setApiRiskHistory] = useState([]);
@@ -164,7 +164,10 @@ export default function ProjectDetailPage() {
     riskCategory: apiProject.riskCategory ?? apiAssessment?.risk_category ?? localProject?.riskCategory,
   } : localProject;
 
-  useEffect(() => subscribeToWorkflow(setWorkflow), []);
+  useEffect(() => {
+    setWorkflow(getWorkflowState());
+    return subscribeToWorkflow(setWorkflow);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -429,6 +432,23 @@ export default function ProjectDetailPage() {
                 Project overview
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-600">{project.description}</p>
+              <dl className="mt-4 grid gap-3 border-t border-slate-200 pt-4 text-sm sm:grid-cols-2">
+                {[
+                  ["Department / Agency", project.department],
+                  ["Required land", project.requiredLandArea != null ? `${project.requiredLandArea} ${project.landUnit || "hectares"}` : ""],
+                  ["Acquisition requirement", project.acquisitionRequirement],
+                  ["Purpose", project.purpose],
+                  ["Planned start", project.plannedStartDate],
+                  ["Target completion", project.targetCompletionDate],
+                  ["Estimated project cost", project.estimatedProjectCost != null ? `INR ${Number(project.estimatedProjectCost).toLocaleString("en-IN")}` : ""],
+                  ["Funding source", project.fundingSource],
+                ].filter(([, value]) => value).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs font-medium text-slate-500">{label}</dt>
+                    <dd className="mt-1 text-slate-800">{value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

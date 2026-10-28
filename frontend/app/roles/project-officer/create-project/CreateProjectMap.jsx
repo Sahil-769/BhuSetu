@@ -1,10 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import L from "leaflet";
-import { FeatureGroup, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
+
+const FeatureGroup = dynamic(() => import("react-leaflet").then((module) => module.FeatureGroup), { ssr: false });
+const MapContainer = dynamic(() => import("react-leaflet").then((module) => module.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import("react-leaflet").then((module) => module.TileLayer), { ssr: false });
 
 const toFeature = (layer) => layer?.toGeoJSON?.() || null;
 
@@ -48,6 +52,7 @@ const getDistanceKm = (coordinates) => coordinates.slice(1).reduce((total, [lati
 }, 0);
 
 function RecenterMap({ center }) {
+  const { useMap } = require("react-leaflet");
   const map = useMap();
   useEffect(() => {
     if (center) map.setView([center.latitude, center.longitude], map.getZoom());
@@ -79,7 +84,7 @@ export default function CreateProjectMap({ isLinear, onGeometryChange }) {
     if (!position) return;
     setCenter(position);
     onGeometryChange({
-      geometry: feature,
+      geometry: feature.geometry,
       geometryType: feature.geometry.type,
       latitude: position.latitude,
       longitude: position.longitude,

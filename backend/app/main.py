@@ -95,9 +95,14 @@ class ProjectIn(BaseModel):
     projectId: str = Field(min_length=1)
     projectName: str = Field(min_length=1)
     description: str | None = None
+    department: str | None = None
     documents: list[dict] = Field(default_factory=list)
     acquisitionRequirement: str | None = None
     purpose: str | None = None
+    plannedStartDate: str | None = None
+    targetCompletionDate: str | None = None
+    estimatedProjectCost: float | None = None
+    fundingSource: str | None = None
     projectType: str = Field(min_length=1)
     state: str = Field(min_length=1)
     district: str = Field(min_length=1)
@@ -110,6 +115,8 @@ class ProjectIn(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     geometry: dict | None = None
+    calculatedArea: str | None = None
+    routeLength: str | None = None
     status: str = "Pending LAO Verification"
 
 
@@ -117,6 +124,16 @@ class ProjectRefreshIn(BaseModel):
     projectId: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = ""
+    department: str | None = None
+    acquisitionRequirement: str | None = None
+    purpose: str | None = None
+    plannedStartDate: str | None = None
+    targetCompletionDate: str | None = None
+    estimatedProjectCost: float | None = None
+    fundingSource: str | None = None
+    locationType: str = "linear"
+    calculatedArea: str | None = None
+    routeLength: str | None = None
     type: str = Field(min_length=1)
     state: str = Field(min_length=1)
     district: str = Field(min_length=1)
@@ -188,7 +205,7 @@ def serialize_project(project: Project) -> dict:
     workflow = (project.acquisition_data or {}).get("workflow", {})
     detail = project.acquisition_data or {}
     assessment = detail.get("latestAssessment", {})
-    return {"id": project.id, "projectId": project.project_id, "name": project.name, "description": detail.get("description", ""), "type": project.type, "state": project.state, "district": project.district, "village": project.village, "tehsil": project.tehsil, "requiredLandArea": project.required_land_area, "landUnit": detail.get("landUnit", "hectares"), "geometry": project.geometry, "status": project.status, "workflowStatus": workflow.get("workflowStatus", project.status), "nodalReviewCompleted": workflow.get("nodalReviewCompleted", False), "submittedAt": workflow.get("submittedAt"), "submittedBy": workflow.get("submittedBy"), "correctionReason": workflow.get("correctionReason"), "verification": workflow.get("verification"), "workflowActivity": workflow.get("workflowActivity", []), "decisionHistory": detail.get("decisionHistory", []), "documents": detail.get("documents", []), "acquisitionSummary": detail.get("acquisitionSummary", {}), "analysisInputs": detail.get("analysisInputs", {}), "riskProbability": project.risk_probability, "riskCategory": project.risk_category, "assessment": assessment, "createdAt": project.created_at.isoformat(), "updatedAt": project.updated_at.isoformat()}
+    return {"id": project.id, "projectId": project.project_id, "name": project.name, "description": detail.get("description", ""), "department": detail.get("department"), "acquisitionRequirement": detail.get("acquisitionRequirement"), "purpose": detail.get("purpose"), "plannedStartDate": detail.get("plannedStartDate"), "targetCompletionDate": detail.get("targetCompletionDate"), "estimatedProjectCost": detail.get("estimatedProjectCost"), "fundingSource": detail.get("fundingSource"), "locationType": detail.get("locationType"), "calculatedArea": detail.get("calculatedArea"), "routeLength": detail.get("routeLength"), "type": project.type, "state": project.state, "district": project.district, "village": project.village, "tehsil": project.tehsil, "requiredLandArea": project.required_land_area, "landUnit": detail.get("landUnit", "hectares"), "geometry": project.geometry, "status": project.status, "workflowStatus": workflow.get("workflowStatus", project.status), "nodalReviewCompleted": workflow.get("nodalReviewCompleted", False), "submittedAt": workflow.get("submittedAt"), "submittedBy": workflow.get("submittedBy"), "correctionReason": workflow.get("correctionReason"), "verification": workflow.get("verification"), "workflowActivity": workflow.get("workflowActivity", []), "decisionHistory": detail.get("decisionHistory", []), "documents": detail.get("documents", []), "acquisitionSummary": detail.get("acquisitionSummary", {}), "analysisInputs": detail.get("analysisInputs", {}), "riskProbability": project.risk_probability, "riskCategory": project.risk_category, "assessment": assessment, "createdAt": project.created_at.isoformat(), "updatedAt": project.updated_at.isoformat()}
 
 
 def demo_project_data(payload: ProjectIn) -> dict:
@@ -236,7 +253,7 @@ def create_project(payload: ProjectIn, session: Session = Depends(db)):
     if session.scalar(select(Project).where(Project.project_id == payload.projectId)):
         raise HTTPException(409, "Project ID already exists")
     geometry = payload.geometry or ({"type": "Point", "coordinates": [payload.longitude, payload.latitude]} if payload.latitude is not None and payload.longitude is not None else None)
-    project = Project(project_id=payload.projectId, name=payload.projectName, type=payload.projectType, state=payload.state, district=payload.district, village=payload.village or payload.villages, tehsil=payload.tehsil, required_land_area=payload.requiredLandArea, geometry=geometry, status=payload.status, acquisition_data={"description": payload.description or "", "landUnit": payload.unit, "acquisitionRequirement": payload.acquisitionRequirement, "purpose": payload.purpose, **demo_project_data(payload)})
+    project = Project(project_id=payload.projectId, name=payload.projectName, type=payload.projectType, state=payload.state, district=payload.district, village=payload.village or payload.villages, tehsil=payload.tehsil, required_land_area=payload.requiredLandArea, geometry=geometry, status=payload.status, acquisition_data={"description": payload.description or "", "department": payload.department, "landUnit": payload.unit, "acquisitionRequirement": payload.acquisitionRequirement, "purpose": payload.purpose, "plannedStartDate": payload.plannedStartDate, "targetCompletionDate": payload.targetCompletionDate, "estimatedProjectCost": payload.estimatedProjectCost, "fundingSource": payload.fundingSource, "locationType": payload.locationType, "calculatedArea": payload.calculatedArea, "routeLength": payload.routeLength, **demo_project_data(payload)})
     session.add(project)
     session.commit()
     session.refresh(project)
@@ -296,8 +313,19 @@ def refresh_project_by_code(project_code: str, payload: ProjectRefreshIn, sessio
     project.created_at = parse_timestamp(payload.createdAt, now)
     project.updated_at = parse_timestamp(payload.updatedAt, now)
     project.acquisition_data = {
+        **(project.acquisition_data or {}),
         "description": payload.description,
+        "department": payload.department,
         "landUnit": payload.landUnit,
+        "acquisitionRequirement": payload.acquisitionRequirement,
+        "purpose": payload.purpose,
+        "plannedStartDate": payload.plannedStartDate,
+        "targetCompletionDate": payload.targetCompletionDate,
+        "estimatedProjectCost": payload.estimatedProjectCost,
+        "fundingSource": payload.fundingSource,
+        "locationType": payload.locationType,
+        "calculatedArea": payload.calculatedArea,
+        "routeLength": payload.routeLength,
         "workflow": {
             "workflowStatus": payload.workflowStatus or payload.status,
             "nodalReviewCompleted": payload.nodalReviewCompleted,

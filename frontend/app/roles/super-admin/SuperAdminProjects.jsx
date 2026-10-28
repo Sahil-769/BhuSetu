@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRight, CircleDashed, Construction, FolderKanban, Search, ShieldAlert, SlidersHorizontal, Sparkles, XCircle } from "lucide-react";
 import { Header } from "../../component/layout/index";
-import { getSuperAdminState, subscribeToSuperAdminState } from "./superAdminStore";
+import { getSuperAdminState, subscribeToSuperAdminState, updateSuperAdminState } from "./superAdminStore";
 import { projectTypeMeta } from "../project-officer/my-project/projects-data";
 import styles from "./superAdmin.module.css";
 import { api, mergeProjectCollections } from "@/lib/api";
+import { getWorkflowState, subscribeToWorkflow } from "@/components/workflowStore";
 
 const PAGE_SIZE = 6;
 const CLOSURE_STATUS = "Closure Recommended / Pending Final Verification";
@@ -45,8 +46,27 @@ export default function SuperAdminProjects() {
   const [page, setPage] = useState(1);
   useEffect(() => {
     const unsubscribe = subscribeToSuperAdminState(setState);
+    const syncNewWorkflowProjects = ({ projects = [] }) => {
+      updateSuperAdminState((current) => {
+        const workflowProjects = new Map(projects.map((project) => [String(project.projectId || project.id), project]));
+        const syncedProjects = current.projects.map((project) => {
+          const workflowProject = workflowProjects.get(String(project.projectId || project.id));
+          if (!workflowProject) return project;
+          workflowProjects.delete(String(project.projectId || project.id));
+          return { ...project, ...workflowProject };
+        });
+        return workflowProjects.size
+          ? { ...current, projects: [...workflowProjects.values(), ...syncedProjects] }
+          : { ...current, projects: syncedProjects };
+      });
+    };
+    const unsubscribeWorkflow = subscribeToWorkflow(syncNewWorkflowProjects);
+    syncNewWorkflowProjects(getWorkflowState());
     api.listProjects().then((projects) => setState((current) => ({ ...current, projects: mergeProjectCollections(current.projects, projects) }))).catch(() => {});
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      unsubscribeWorkflow();
+    };
   }, []);
   const projects = state.projects;
   const types = ["All types", ...new Set(projects.map((project) => project.type))];

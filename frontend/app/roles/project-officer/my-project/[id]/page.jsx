@@ -674,6 +674,21 @@ export default function ProjectDetailsPage() {
                 Overview
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-600">{project.description}</p>
+              <dl className="mt-4 grid gap-3 border-t border-slate-200 pt-4 text-sm sm:grid-cols-2">
+                {[
+                  ["Department / Agency", project.department],
+                  ["Required land", project.requiredLandArea != null ? `${project.requiredLandArea} ${project.landUnit || "hectares"}` : ""],
+                  ["Acquisition requirement", project.acquisitionRequirement],
+                  ["Purpose", project.purpose],
+                  ["Estimated project cost", project.estimatedProjectCost != null ? `INR ${Number(project.estimatedProjectCost).toLocaleString("en-IN")}` : ""],
+                  ["Funding source", project.fundingSource],
+                ].filter(([, value]) => value).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs font-medium text-slate-500">{label}</dt>
+                    <dd className="mt-1 text-slate-800">{value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -726,6 +741,16 @@ export default function ProjectDetailsPage() {
               <li>
                 <span className="font-medium text-slate-800">Land required:</span> {project.requiredLandArea} {project.landUnit}
               </li>
+              {project.plannedStartDate ? (
+                <li>
+                  <span className="font-medium text-slate-800">Planned start:</span> {formatDate(project.plannedStartDate)}
+                </li>
+              ) : null}
+              {project.targetCompletionDate ? (
+                <li>
+                  <span className="font-medium text-slate-800">Target completion:</span> {formatDate(project.targetCompletionDate)}
+                </li>
+              ) : null}
             </ul>
           </div>
 
